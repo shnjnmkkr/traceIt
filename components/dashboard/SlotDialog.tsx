@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Trash2, Calendar, MapPin, User, Check } from "lucide-react";
+import { X, Trash2, Calendar, MapPin, User, Check, Edit2, Save } from "lucide-react";
 import { TimetableSlot } from "@/types";
 import { getStatusColor, getStatusLabel } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,10 +24,15 @@ interface SlotDialogProps {
   onClose: () => void;
   onStatusChange: (status: string) => void;
   onDelete: () => void;
+  onSlotEdit?: (slot: TimetableSlot) => void;
+  editable?: boolean;
   slotPosition?: { x: number; y: number; width: number; height: number } | null;
 }
 
-export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatusChange, onDelete, slotPosition }: SlotDialogProps) {
+export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatusChange, onDelete, onSlotEdit, editable = false, slotPosition }: SlotDialogProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedSlot, setEditedSlot] = useState(slot);
+  
   if (!slot) return null;
 
   // Calculate initial position for animation
@@ -34,6 +40,13 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
   
   // Format the date for display
   const dateDisplay = date ? new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : '';
+  
+  const handleSave = () => {
+    if (onSlotEdit && editedSlot) {
+      onSlotEdit(editedSlot);
+    }
+    setIsEditing(false);
+  };
 
   return (
     <AnimatePresence>
@@ -89,63 +102,98 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                     backgroundColor: `${getStatusColor(currentStatus)}10`,
                   }}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="text-xl font-bold font-mono truncate">
-                          {slot.subject}
-                        </h3>
-                        <Badge 
-                          variant="outline"
-                          className="flex-shrink-0"
-                          style={{
-                            borderColor: getStatusColor(currentStatus),
-                            color: getStatusColor(currentStatus),
-                          }}
-                        >
-                          {getStatusLabel(currentStatus)}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {slot.subjectName}
-                      </p>
-                      {dateDisplay && (
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            value={editedSlot?.subjectName || ''}
+                            onChange={(e) => setEditedSlot(prev => prev ? { ...prev, subjectName: e.target.value } : null)}
+                            placeholder="Subject"
+                            className="w-full bg-background rounded px-3 py-2 text-sm border border-border"
+                          />
+                          <input
+                            type="text"
+                            value={editedSlot?.subject || ''}
+                            onChange={(e) => setEditedSlot(prev => prev ? { ...prev, subject: e.target.value } : null)}
+                            placeholder="Code"
+                            className="w-full bg-background rounded px-3 py-2 text-sm font-mono font-bold border border-border"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="text-xl font-bold font-mono truncate">
+                              {slot.subject}
+                            </h3>
+                            <Badge 
+                              variant="outline"
+                              className="flex-shrink-0"
+                              style={{
+                                borderColor: getStatusColor(currentStatus),
+                                color: getStatusColor(currentStatus),
+                              }}
+                            >
+                              {getStatusLabel(currentStatus)}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {slot.subjectName}
+                          </p>
+                        </>
+                      )}
+                      {dateDisplay && !isEditing && (
                         <p className="text-xs text-muted-foreground mt-1 font-mono">
                           {dateDisplay}
                         </p>
                       )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onClose}
-                      className="h-8 w-8 -mr-2 -mt-2 flex-shrink-0"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1 flex-shrink-0">
+                      {editable && !isEditing && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setIsEditing(true)}
+                          className="h-8 w-8"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onClose}
+                        className="h-8 w-8"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {/* Details */}
-                  <div className="mt-4 space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="w-4 h-4 flex-shrink-0" />
-                      <span className="font-mono">
-                        {slot.startTime} - {slot.endTime}
-                      </span>
+                  {!isEditing && (
+                    <div className="mt-4 space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="w-4 h-4 flex-shrink-0" />
+                        <span className="font-mono">
+                          {slot.startTime} - {slot.endTime}
+                        </span>
+                      </div>
+                      {slot.room && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <MapPin className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{slot.room}</span>
+                        </div>
+                      )}
+                      {slot.instructor && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <User className="w-4 h-4 flex-shrink-0" />
+                          <span className="truncate">{slot.instructor}</span>
+                        </div>
+                      )}
                     </div>
-                    {slot.room && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="w-4 h-4 flex-shrink-0" />
-                        <span className="truncate">{slot.room}</span>
-                      </div>
-                    )}
-                    {slot.instructor && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <User className="w-4 h-4 flex-shrink-0" />
-                        <span className="truncate">{slot.instructor}</span>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
 
                 {/* Status Selection */}
@@ -197,24 +245,48 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
 
                 {/* Actions */}
                 <div className="p-6 pt-0 flex gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={onClose}
-                    className="flex-1"
-                  >
-                    Close
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      onDelete();
-                      onClose();
-                    }}
-                    className="text-error border-error hover:bg-error/10 flex-shrink-0"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Delete
-                  </Button>
+                  {isEditing ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setEditedSlot(slot);
+                          setIsEditing(false);
+                        }}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleSave}
+                        className="flex-1"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Save
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        onClick={onClose}
+                        className="flex-1"
+                      >
+                        Close
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          onDelete();
+                          onClose();
+                        }}
+                        className="text-error border-error hover:bg-error/10 flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

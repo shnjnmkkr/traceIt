@@ -42,8 +42,8 @@ export async function GET() {
     const transformedSlots = slots.map(slot => ({
       id: slot.id,
       day: slot.day_of_week,
-      startTime: slot.start_time,
-      endTime: slot.end_time,
+      startTime: slot.start_time.substring(0, 5), // Convert "08:00:00" to "08:00"
+      endTime: slot.end_time.substring(0, 5),     // Convert "09:00:00" to "09:00"
       subject: slot.subject_code,
       subjectName: slot.subject_name,
       room: slot.room,
