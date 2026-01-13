@@ -25,7 +25,7 @@ export async function GET() {
           settings: {
             targetPercentage: 75,
             countMassBunkAs: 'absent',
-            countTeacherAbsentInTotal: false,
+            countTeacherAbsentAs: 'attended',
             showAnalytics: true,
           },
         });
@@ -37,7 +37,7 @@ export async function GET() {
       settings: {
         targetPercentage: parseFloat(settings.target_percentage),
         countMassBunkAs: settings.count_mass_bunk_as,
-        countTeacherAbsentInTotal: settings.count_teacher_absent_in_total,
+        countTeacherAbsentAs: settings.count_teacher_absent_as,
         showAnalytics: settings.show_analytics,
       },
     });
@@ -62,7 +62,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { targetPercentage, countMassBunkAs, countTeacherAbsentInTotal, showAnalytics } = body;
+    const { targetPercentage, countMassBunkAs, countTeacherAbsentAs, showAnalytics } = body;
 
     // Upsert settings
     const { error } = await supabase
@@ -71,7 +71,7 @@ export async function PUT(request: Request) {
         user_id: user.id,
         target_percentage: targetPercentage,
         count_mass_bunk_as: countMassBunkAs,
-        count_teacher_absent_in_total: countTeacherAbsentInTotal,
+        count_teacher_absent_as: countTeacherAbsentAs,
         show_analytics: showAnalytics,
       }, {
         onConflict: 'user_id',

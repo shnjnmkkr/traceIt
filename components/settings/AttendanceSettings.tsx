@@ -44,7 +44,7 @@ export function AttendanceSettings({ settings, onChange }: AttendanceSettingsPro
           {[
             { value: "attended" as const, label: "Present", desc: "Boost your %" },
             { value: "absent" as const, label: "Absent", desc: "Realistic count" },
-            { value: "exclude" as const, label: "Exclude", desc: "Ignore in calc" },
+            { value: "exclude" as const, label: "Exclude", desc: "Ignore in calculation" },
           ].map((option) => (
             <button
               key={option.value}
@@ -62,26 +62,31 @@ export function AttendanceSettings({ settings, onChange }: AttendanceSettingsPro
         </div>
       </div>
 
-      {/* Teacher Absent */}
-      <div className="flex items-start justify-between gap-3 p-3 bg-muted rounded-lg">
-        <div className="flex-1">
-          <div className="text-xs font-mono font-semibold mb-1">
-            Teacher Absent in Total
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Include when calculating total classes
-          </div>
+      {/* Teacher Absent Counting */}
+      <div>
+        <label className="text-xs font-mono text-muted-foreground mb-2 block uppercase">
+          Count Teacher Absent As
+        </label>
+        <div className="flex flex-col gap-2">
+          {[
+            { value: "attended" as const, label: "Present", desc: "Mark as attended" },
+            { value: "absent" as const, label: "Absent", desc: "Count against you" },
+            { value: "exclude" as const, label: "Exclude", desc: "Ignore in calculation" },
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => onChange({ ...settings, countTeacherAbsentAs: option.value })}
+              className={`text-left px-3 py-2 rounded-lg border transition-all ${
+                settings.countTeacherAbsentAs === option.value
+                  ? "bg-primary/20 border-primary text-foreground"
+                  : "bg-muted border-border text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              <div className="text-xs font-mono font-semibold">{option.label}</div>
+              <div className="text-xs text-muted-foreground">{option.desc}</div>
+            </button>
+          ))}
         </div>
-        <Button
-          variant={settings.countTeacherAbsentInTotal ? "default" : "outline"}
-          size="sm"
-          onClick={() =>
-            onChange({ ...settings, countTeacherAbsentInTotal: !settings.countTeacherAbsentInTotal })
-          }
-          className="flex-shrink-0"
-        >
-          {settings.countTeacherAbsentInTotal ? "Yes" : "No"}
-        </Button>
       </div>
 
       {/* Show Analytics Toggle */}

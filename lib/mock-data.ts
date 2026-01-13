@@ -41,7 +41,7 @@ export const defaultTimetable: Timetable = {
 export const defaultSettings: UserSettings = {
   targetPercentage: 75,
   countMassBunkAs: "absent",
-  countTeacherAbsentInTotal: false,
+  countTeacherAbsentAs: "attended",
   showAnalytics: true,
 };
 

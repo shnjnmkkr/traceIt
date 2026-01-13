@@ -64,6 +64,6 @@ export interface ChatMessage {
 export interface UserSettings {
   targetPercentage: number;
   countMassBunkAs: "attended" | "absent" | "exclude";
-  countTeacherAbsentInTotal: boolean;
+  countTeacherAbsentAs: "attended" | "absent" | "exclude";
   showAnalytics: boolean;
 }

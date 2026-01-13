@@ -132,7 +132,17 @@ export function calculateAttendanceStats(
           
         case "teacher_absent":
           subjectStats.teacherAbsent += weight;
-          if (settings.countTeacherAbsentInTotal) {
+          if (settings.countTeacherAbsentAs === "attended") {
+            subjectStats.attended += weight;
+            subjectStats.total += weight;
+            if (isLab) {
+              subjectStats.labAttended += weight;
+              subjectStats.labTotal += weight;
+            } else {
+              subjectStats.lectureAttended += weight;
+              subjectStats.lectureTotal += weight;
+            }
+          } else if (settings.countTeacherAbsentAs === "absent") {
             subjectStats.total += weight;
             if (isLab) {
               subjectStats.labTotal += weight;
@@ -140,6 +150,7 @@ export function calculateAttendanceStats(
               subjectStats.lectureTotal += weight;
             }
           }
+          // If "exclude", don't add to total
           break;
           
         case "holiday":
