@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Settings, Loader2, LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Loader2, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { addWeeks, subWeeks, startOfWeek, format } from "date-fns";
 import { WeekSelector } from "@/components/dashboard/WeekSelector";
 import { TimetableHeader } from "@/components/dashboard/TimetableHeader";
@@ -15,6 +15,7 @@ import { AIChatPanel } from "@/components/dashboard/AIChatPanel";
 import { SemesterInfo } from "@/components/dashboard/SemesterInfo";
 import { AttendanceSettings } from "@/components/settings/AttendanceSettings";
 import { BulkMarkingDialog } from "@/components/dashboard/BulkMarkingDialog";
+import { ProfileDropdown } from "@/components/dashboard/ProfileDropdown";
 import { Button } from "@/components/ui/button";
 import { calculateAttendanceStats } from "@/lib/attendance-calculator";
 import { Timetable, UserSettings } from "@/types";
@@ -27,18 +28,25 @@ export default function DashboardPage() {
   // UI State
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [isMobileLeftPanelOpen, setIsMobileLeftPanelOpen] = useState(false);
-  const [isAIPanelOpen, setIsAIPanelOpen] = useState(true);
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false); // Default closed for mobile-first
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isBulkMarkingOpen, setIsBulkMarkingOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  
+  // Open AI panel on desktop by default
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setIsAIPanelOpen(true);
+    }
+  }, []);
   
   // Data State
   const [timetable, setTimetable] = useState<Timetable | null>(null);
   const [settings, setSettings] = useState<UserSettings>({
     targetPercentage: 75,
     countMassBunkAs: "absent",
-    countTeacherAbsentInTotal: false,
+    countTeacherAbsentAs: "attended",
     showAnalytics: true,
   });
   const [attendanceRecords, setAttendanceRecords] = useState<Map<string, string>>(new Map());
@@ -143,8 +151,115 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSlotDelete = (slotId: string) => {
-    // Slot deletion implementation
+  const handleSlotDelete = async (slotId: string) => {
+    if (!timetable) return;
+    
+    try {
+      console.log('🗑️ Deleting slot:', slotId);
+      
+      const response = await fetch('/api/timetable/slot', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slotId }),
+      });
+
+      const result = await response.json();
+      console.log('✅ Delete response:', result);
+
+      if (!response.ok) {
+        console.error('❌ Failed to delete slot:', result);
+        throw new Error('Failed to delete slot');
+      }
+      
+      // Update local state immediately
+      setTimetable(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          slots: prev.slots.filter(s => s.id !== slotId)
+        };
+      });
+      
+      console.log('✅ Slot deleted successfully');
+    } catch (error) {
+      console.error('❌ Error deleting slot:', error);
+    }
+  };
+
+  const handleSlotEdit = async (updatedSlot: any) => {
+    if (!timetable) return;
+    
+    // Optimistic update
+    setTimetable(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        slots: prev.slots.map(s => s.id === updatedSlot.id ? updatedSlot : s)
+      };
+    });
+    
+    // Save to database
+    try {
+      await fetch('/api/timetable/slot', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slotId: updatedSlot.id,
+          subject: updatedSlot.subject,
+          subjectName: updatedSlot.subjectName,
+          room: updatedSlot.room,
+          instructor: updatedSlot.instructor,
+        }),
+      });
+    } catch (error) {
+      console.error('Error updating slot:', error);
+      // Revert optimistic update on error
+      router.refresh();
+    }
+  };
+
+  const handleSlotAdd = async (day: number, startTime: string, endTime: string, subject: string, subjectName: string, type: "lecture" | "lab") => {
+    if (!timetable) return;
+    
+    try {
+      console.log('📝 Adding slot:', { day, startTime, endTime, subject, subjectName, type });
+      
+      const response = await fetch('/api/timetable/slot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timetableId: timetable.id,
+          day,
+          startTime,
+          endTime,
+          subject,
+          subjectName,
+          type,
+        }),
+      });
+
+      const result = await response.json();
+      console.log('✅ Slot creation response:', result);
+
+      if (!response.ok) {
+        console.error('❌ Failed to create slot:', result);
+        throw new Error('Failed to add slot');
+      }
+      
+      // Reload timetable
+      console.log('🔄 Fetching updated timetable...');
+      const ttResponse = await fetch('/api/timetable');
+      const ttData = await ttResponse.json();
+      console.log('📊 Timetable data received:', ttData);
+      console.log('📋 Slots in timetable:', ttData.timetable?.slots);
+      
+      if (ttData.timetable) {
+        setTimetable(ttData.timetable);
+        console.log('✅ Timetable state updated');
+      }
+    } catch (error) {
+      console.error('❌ Error adding slot:', error);
+    }
   };
 
   const handleTimetableNameChange = async (newName: string) => {
@@ -210,12 +325,6 @@ export default function DashboardPage() {
   };
   
   // Logout
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/auth/login');
-    router.refresh();
-  };
-
   // Calculate "at risk" subjects
   const atRiskSubjects = analytics.subjects.filter(s => s.percentage < settings.targetPercentage);
 
@@ -315,19 +424,6 @@ export default function DashboardPage() {
 
           {/* Settings */}
           <AttendanceSettings settings={settings} onChange={handleSettingsChange} />
-          
-          {/* Logout Button */}
-          <div className="pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="w-full gap-2 font-mono text-xs text-error border-error hover:bg-error/10"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              Logout
-            </Button>
-          </div>
             </div>
           </ResizableLeftPanel>
         )}
@@ -392,16 +488,8 @@ export default function DashboardPage() {
                   <span className="hidden sm:inline">AI Advisor</span>
                 </Button>
 
-                {/* Logout Button - Desktop */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="gap-2 hidden lg:flex text-muted-foreground hover:text-error"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Logout</span>
-                </Button>
+                {/* Profile Dropdown */}
+                <ProfileDropdown />
               </div>
             </div>
 
@@ -432,6 +520,8 @@ export default function DashboardPage() {
               currentWeekStart={weekStart}
               onSlotUpdate={handleSlotUpdate}
               onSlotDelete={handleSlotDelete}
+              onSlotEdit={handleSlotEdit}
+              onSlotAdd={handleSlotAdd}
               editable={true}
             />
           </motion.div>
@@ -460,15 +550,11 @@ export default function DashboardPage() {
               className="text-center py-16"
             >
               <h3 className="text-xl font-mono font-semibold text-muted-foreground mb-2">
-                No Timetable Yet
+                No Classes Added
               </h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                Create your timetable to start tracking attendance
+              <p className="text-sm text-muted-foreground">
+                Click on any time slot above to add your classes
               </p>
-              <Button variant="default" className="gap-2">
-                <CalendarDays className="w-4 h-4" />
-                Create Timetable
-              </Button>
             </motion.div>
           )}
         </div>
@@ -596,19 +682,6 @@ export default function DashboardPage() {
 
                 {/* Settings */}
                 <AttendanceSettings settings={settings} onChange={handleSettingsChange} />
-                
-                {/* Logout Button */}
-                <div className="pt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="w-full gap-2 font-mono text-xs text-error border-error hover:bg-error/10"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    Logout
-                  </Button>
-                </div>
               </div>
             </motion.div>
           </>
