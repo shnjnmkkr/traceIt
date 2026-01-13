@@ -189,6 +189,7 @@ export default function CreateTimetablePage() {
             room: s.room,
             instructor: s.instructor,
             rowSpan: s.rowSpan,
+            type: s.type || 'lecture',
           })),
         }),
       });
@@ -198,8 +199,8 @@ export default function CreateTimetablePage() {
         throw new Error(data.error || 'Failed to create timetable');
       }
 
-      router.push('/dashboard');
-      router.refresh();
+      // Hard redirect to ensure fresh data load
+      window.location.href = '/dashboard';
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -362,7 +363,7 @@ export default function CreateTimetablePage() {
                                 type="text"
                                 value={slot.subjectName}
                                 onChange={(e) => updateSlot(slot.id, { subjectName: e.target.value })}
-                                placeholder="Data Structures"
+                                placeholder="Subject"
                                 autoFocus
                                 className="w-full bg-background rounded px-2 py-1 text-xs border border-border"
                               />
@@ -370,7 +371,7 @@ export default function CreateTimetablePage() {
                                 type="text"
                                 value={slot.subject}
                                 onChange={(e) => updateSlot(slot.id, { subject: e.target.value })}
-                                placeholder="CS101"
+                                placeholder="Code"
                                 className="w-full bg-background rounded px-2 py-1 text-xs font-mono font-bold border border-border"
                               />
                               <div className="flex gap-1 mt-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { TimetableSlot } from "@/types";
 import { getStatusColor, getStatusLabel } from "@/lib/utils";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SlotDialog } from "./SlotDialog";
+import { AddSlotDialog } from "./AddSlotDialog";
 import { addDays, format, isBefore, startOfDay } from "date-fns";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -30,19 +31,36 @@ interface TimetableGridProps {
   currentWeekStart: Date;
   onSlotUpdate?: (slotId: string, date: string, status: string) => void;
   onSlotDelete?: (slotId: string) => void;
+  onSlotEdit?: (slot: TimetableSlot) => void;
+  onSlotAdd?: (day: number, startTime: string, endTime: string, subject: string, subjectName: string, type: "lecture" | "lab") => void;
   editable?: boolean;
 }
 
-export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSlotUpdate, onSlotDelete, editable = true }: TimetableGridProps) {
+export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSlotUpdate, onSlotDelete, onSlotEdit, onSlotAdd, editable = true }: TimetableGridProps) {
   const [selectedSlot, setSelectedSlot] = useState<{ slot: TimetableSlot; date: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [slotPosition, setSlotPosition] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [mergingSlots, setMergingSlots] = useState<string[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newSlotData, setNewSlotData] = useState<{ day: number; startTime: string; endTime: string } | null>(null);
+
+  // Debug: Log when slots change
+  useEffect(() => {
+    console.log('🎯 TimetableGrid received slots:', slots);
+    console.log('📊 Total slots:', slots.length);
+    slots.forEach(slot => {
+      console.log(`Slot: day=${slot.day}, startTime="${slot.startTime}", subject=${slot.subject}`);
+    });
+  }, [slots]);
 
   const getSlotForCell = (day: number, time: string) => {
-    return slots.find(
+    const found = slots.find(
       (slot) => slot.day === day && slot.startTime === time
     );
+    if (found) {
+      console.log(`✅ Found slot at day=${day}, time=${time}:`, found);
+    }
+    return found;
   };
 
   // Get the date for a specific day of the current week
@@ -98,7 +116,7 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
 
   const handleDelete = () => {
     if (selectedSlot && onSlotDelete) {
-      onSlotDelete(selectedSlot.id);
+      onSlotDelete(selectedSlot.slot.id);
     }
   };
 
@@ -152,86 +170,102 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
         <div className="overflow-x-auto overflow-y-hidden">
           <div className="min-w-[1000px] p-6">
             {/* Header row - Time slots */}
-            <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: `100px repeat(${TIME_SLOTS.length}, 1fr)` }}>
-              <div className="text-xs font-mono text-muted-foreground p-2 uppercase">Day</div>
+            <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: `100px repeat(${TIME_SLOTS.length}, 1fr)` }}>
+              <div className="text-xs font-mono font-semibold text-muted-foreground p-2">Day</div>
               {TIME_SLOTS.map((time, idx) => {
                 const nextTime = TIME_SLOTS[idx + 1];
                 const endTime = nextTime || (parseInt(time.split(':')[0]) + 1) + ':00';
                 return (
-                  <div key={time} className="text-xs font-mono font-semibold text-center p-2 tracking-wider">
+                  <div key={time} className="text-xs font-mono font-semibold text-center p-2">
                     {time}-{endTime}
                   </div>
                 );
               })}
             </div>
 
-            {/* Day rows */}
+            {/* Rows - Each Day */}
             {DAYS.map((day, dayIdx) => (
-              <motion.div
-                key={day}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: dayIdx * 0.03 }}
-                className="grid gap-3 mb-3"
-                style={{ gridTemplateColumns: `100px repeat(${TIME_SLOTS.length}, 1fr)` }}
-              >
+              <div key={day} className="grid gap-2 mb-2" style={{ gridTemplateColumns: `100px repeat(${TIME_SLOTS.length}, 1fr)` }}>
                 <div className="text-xs font-mono font-semibold p-2 flex items-center uppercase tracking-wider">
                   {day}
                 </div>
                 
-                {TIME_SLOTS.map((time) => {
+                {TIME_SLOTS.map((time, timeIdx) => {
+                  // Check if this cell is covered by a merged cell
+                  const isCovered = TIME_SLOTS.some((t, idx) => {
+                    if (idx >= timeIdx) return false;
+                    const s = getSlotForCell(dayIdx, t);
+                    if (!s || !s.rowSpan) return false;
+                    const slotEndIdx = idx + s.rowSpan;
+                    return timeIdx < slotEndIdx;
+                  });
+                  
+                  if (isCovered) {
+                    return null;
+                  }
+
                   const slot = getSlotForCell(dayIdx, time);
                   const date = getDateForDay(dayIdx);
                   
-                  if (!slot) {
-                    return (
-                      <motion.div
-                        key={`${dayIdx}-${time}`}
-                        whileHover={{ scale: 1.02, borderColor: "#16a34a" }}
-                        className="min-h-[70px] border border-dashed border-border rounded-md p-2 cursor-pointer hover:bg-muted/30 transition-all flex items-center justify-center group"
-                      >
-                        <Plus className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-50 transition-opacity" />
-                      </motion.div>
-                    );
-                  }
+                  const isSlotSelected = false; // No selection in dashboard view
+                  const gridColumnStart = timeIdx + 2;
+                  const gridColumnEnd = slot?.rowSpan ? gridColumnStart + slot.rowSpan : gridColumnStart + 1;
 
-                  // Skip if this is part of a colSpan (already rendered)
-                  if (slot.rowSpan && slot.rowSpan > 1 && slot.startTime !== time) {
-                    return null;
+                  if (!slot) {
+                    const nextTime = TIME_SLOTS[timeIdx + 1] || "18:00";
+                    
+                    return (
+                      <div
+                        key={`${dayIdx}-${time}`}
+                        onClick={() => {
+                          if (editable && onSlotAdd) {
+                            setNewSlotData({ day: dayIdx, startTime: time, endTime: nextTime });
+                            setIsAddDialogOpen(true);
+                          }
+                        }}
+                        className="min-h-[70px] border-2 border-dashed border-border rounded-md p-3 cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-all flex items-center justify-center group"
+                        style={{ gridColumnStart, gridColumnEnd }}
+                      >
+                        <Plus className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    );
                   }
 
                   const isMerging = mergingSlots.includes(slot.id);
                   const status = getSlotStatus(slot.id, date);
 
                   return (
-                    <motion.div
-                      key={`${slot.id}-${date}-${status}`}
-                      whileHover={{ scale: 1.03, zIndex: 10 }}
-                      whileTap={{ scale: 0.97 }}
+                    <div
+                      key={`${slot.id}-${date}`}
                       onClick={(e) => handleSlotClick(slot, date, e)}
+                      className={`min-h-[70px] border-2 rounded-md p-3 cursor-pointer transition-all relative ${
+                        isMerging ? 'ring-2 ring-warning shadow-lg' : ''
+                      }`}
                       style={{
-                        gridColumn: slot.rowSpan ? `span ${slot.rowSpan}` : "span 1",
+                        gridColumnStart,
+                        gridColumnEnd,
                         backgroundColor: `${slot.color || getStatusColor(status)}08`,
                         borderColor: slot.color || getStatusColor(status),
                       }}
-                      className={`
-                        min-h-[70px] border-2 rounded-md p-3 cursor-pointer transition-all
-                        ${isMerging ? "ring-2 ring-warning shadow-lg" : ""}
-                      `}
                     >
-                      <div className="flex flex-col h-full justify-between">
-                        <div>
-                          <div className="text-sm font-mono font-bold truncate">
+                      <div className="h-full flex flex-col">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="text-sm font-mono font-bold text-primary leading-tight">
                             {slot.subject}
                           </div>
-                          <div className="text-xs text-muted-foreground truncate mt-1">
-                            {slot.subjectName}
-                          </div>
+                          {slot.type === "lab" && (
+                            <div className="text-xs px-1.5 py-0.5 bg-primary/20 text-primary rounded font-mono font-bold">
+                              LAB
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
+                          {slot.subjectName}
                         </div>
                         
                         <Badge 
                           variant="outline" 
-                          className="text-xs w-fit mt-2"
+                          className="text-xs w-fit mt-auto"
                           style={{
                             borderColor: getStatusColor(status),
                             color: getStatusColor(status),
@@ -240,10 +274,10 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
                           {getStatusLabel(status)}
                         </Badge>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -256,6 +290,7 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
         currentStatus={selectedSlot ? getSlotStatus(selectedSlot.slot.id, selectedSlot.date) : "unmarked"}
         isOpen={isDialogOpen}
         slotPosition={slotPosition}
+        editable={editable}
         onClose={() => {
           setIsDialogOpen(false);
           setSelectedSlot(null);
@@ -263,7 +298,28 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
         }}
         onStatusChange={handleStatusChange}
         onDelete={handleDelete}
+        onSlotEdit={onSlotEdit}
       />
+
+      {newSlotData && (
+        <AddSlotDialog
+          day={newSlotData.day}
+          startTime={newSlotData.startTime}
+          endTime={newSlotData.endTime}
+          isOpen={isAddDialogOpen}
+          onClose={() => {
+            setIsAddDialogOpen(false);
+            setNewSlotData(null);
+          }}
+          onSave={(data) => {
+            if (onSlotAdd) {
+              onSlotAdd(newSlotData.day, newSlotData.startTime, newSlotData.endTime, data.subject, data.subjectName, data.type);
+            }
+            setIsAddDialogOpen(false);
+            setNewSlotData(null);
+          }}
+        />
+      )}
     </>
   );
 }
