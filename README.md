@@ -1,0 +1,3 @@
+# TraceIt
+
+A modern attendance management system built for students who want to track and analyze their class attendance. Create your timetable with an interactive grid editor, mark your attendance with detailed status tracking (attended, absent, mass bunked, teacher absent, holiday), and get real-time analytics on your attendance percentages. The system intelligently differentiates between labs and lectures for accurate tracking, provides customizable calculation settings, and offers visual insights through charts and breakdowns. Built with Next.js, TypeScript, and modern web technologies for a seamless experience across desktop and mobile devices.
