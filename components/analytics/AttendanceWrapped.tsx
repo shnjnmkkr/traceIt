@@ -228,34 +228,19 @@ export function AttendanceWrapped({
     {
       gradient: "from-slate-900 via-purple-900 to-slate-900",
       content: (
-        <div className="flex flex-col items-center justify-start h-full w-full text-white px-4 py-4 overflow-hidden">
-          <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-center mb-3 w-full"
-          >
-            <motion.p
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-sm font-semibold mb-1 text-white/90"
-            >
+        <div className="flex flex-col items-center justify-center h-full w-full text-white px-4 py-6 overflow-hidden">
+          <div className="text-center mb-4 w-full">
+            <p className="text-sm font-semibold mb-1 text-white/90">
               {displayName}'s
-            </motion.p>
+            </p>
             <h2 className="text-2xl font-bold">{new Date().getFullYear()} Summary</h2>
             <p className="text-xs opacity-70 mt-1">{semesterName}</p>
             <p className="text-[10px] opacity-50 mt-0.5">
               {new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </p>
-          </motion.div>
+          </div>
           
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={isCapturing ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
-            transition={isCapturing ? { duration: 0 } : { delay: 0.3 }}
-            className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 w-full max-w-sm"
-          >
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 w-full max-w-sm mx-auto">
             {/* Overall */}
             <div className="text-center mb-3 pb-3 border-b border-white/20">
               <p className="text-xs opacity-70 mb-1">Overall Attendance</p>
@@ -265,94 +250,54 @@ export function AttendanceWrapped({
 
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-2 mb-3">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={isCapturing ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-                transition={isCapturing ? { duration: 0 } : { delay: 0.5 }}
-                className="text-center bg-white/5 rounded-lg p-2"
-              >
+              <div className="text-center bg-white/5 rounded-lg p-2">
                 <p className="text-xl font-bold text-green-300">{totalAttended}</p>
                 <p className="text-[10px] opacity-70">Attended</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={isCapturing ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-                transition={isCapturing ? { duration: 0 } : { delay: 0.6 }}
-                className="text-center bg-white/5 rounded-lg p-2"
-              >
+              </div>
+              <div className="text-center bg-white/5 rounded-lg p-2">
                 <p className="text-xl font-bold text-red-300">{totalBunked}</p>
                 <p className="text-[10px] opacity-70">Bunked</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={isCapturing ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
-                transition={isCapturing ? { duration: 0 } : { delay: 0.7 }}
-                className="text-center bg-white/5 rounded-lg p-2"
-              >
+              </div>
+              <div className="text-center bg-white/5 rounded-lg p-2">
                 <p className="text-xl font-bold text-purple-300">{subjects.length}</p>
                 <p className="text-[10px] opacity-70">Subjects</p>
-              </motion.div>
+              </div>
             </div>
 
             {/* Performance Indicators */}
             <div className="space-y-2 mb-3 pb-3 border-b border-white/20">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={isCapturing ? { opacity: 1 } : { opacity: 1 }}
-                transition={isCapturing ? { duration: 0 } : { delay: 0.8 }}
-                className="bg-white/5 rounded-lg p-2"
-              >
+              <div className="bg-white/5 rounded-lg p-2">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[10px] opacity-70">Best Performance</span>
                   <span className="text-xs font-semibold text-green-300">{bestSubject.percentage}%</span>
                 </div>
                 <p className="text-xs font-medium truncate">{bestSubject.name}</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={isCapturing ? { opacity: 1 } : { opacity: 1 }}
-                transition={isCapturing ? { duration: 0 } : { delay: 0.9 }}
-                className="bg-white/5 rounded-lg p-2"
-              >
+              </div>
+              <div className="bg-white/5 rounded-lg p-2">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[10px] opacity-70">Needs Attention</span>
                   <span className="text-xs font-semibold text-orange-300">{worstSubject.percentage}%</span>
                 </div>
                 <p className="text-xs font-medium truncate">{worstSubject.name}</p>
-              </motion.div>
+              </div>
             </div>
 
             {/* Additional Stats */}
             <div className="grid grid-cols-2 gap-2">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={isCapturing ? { opacity: 1 } : { opacity: 1 }}
-                transition={isCapturing ? { duration: 0 } : { delay: 1 }}
-                className="text-center bg-white/5 rounded-lg p-2"
-              >
+              <div className="text-center bg-white/5 rounded-lg p-2">
                 <p className="text-lg font-bold">{Math.round((totalAttended/totalClasses) * 100)}%</p>
                 <p className="text-[10px] opacity-70">Attendance Rate</p>
-              </motion.div>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={isCapturing ? { opacity: 1 } : { opacity: 1 }}
-                transition={isCapturing ? { duration: 0 } : { delay: 1.1 }}
-                className="text-center bg-white/5 rounded-lg p-2"
-              >
+              </div>
+              <div className="text-center bg-white/5 rounded-lg p-2">
                 <p className="text-lg font-bold">{totalClasses - totalAttended}</p>
                 <p className="text-[10px] opacity-70">Classes Missed</p>
-              </motion.div>
+              </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.5 }}
-            transition={{ delay: 1.2 }}
-            className="text-[10px] mt-3 text-center w-full"
-          >
+          <p className="text-[10px] mt-4 text-center w-full opacity-50">
             Tracked with traceIt
-          </motion.p>
+          </p>
         </div>
       ),
     },
@@ -364,15 +309,29 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
-      // Wait for animations to complete
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Wait for any rendering to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force a reflow to ensure everything is rendered
+      cardRef.current.offsetHeight;
 
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
+        backgroundColor: '#1a1a1a',
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
+        windowWidth: cardRef.current.scrollWidth,
+        windowHeight: cardRef.current.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Ensure all elements are visible in the clone
+          const clonedCard = clonedDoc.querySelector('[data-card-ref]') as HTMLElement;
+          if (clonedCard) {
+            clonedCard.style.opacity = '1';
+            clonedCard.style.transform = 'none';
+            clonedCard.style.visibility = 'visible';
+          }
+        },
       });
 
       const link = document.createElement("a");
@@ -393,15 +352,29 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
-      // Wait for animations to complete
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Wait for any rendering to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Force a reflow to ensure everything is rendered
+      cardRef.current.offsetHeight;
 
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
+        backgroundColor: '#1a1a1a',
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
+        windowWidth: cardRef.current.scrollWidth,
+        windowHeight: cardRef.current.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Ensure all elements are visible in the clone
+          const clonedCard = clonedDoc.querySelector('[data-card-ref]') as HTMLElement;
+          if (clonedCard) {
+            clonedCard.style.opacity = '1';
+            clonedCard.style.transform = 'none';
+            clonedCard.style.visibility = 'visible';
+          }
+        },
       });
 
       canvas.toBlob(async (blob) => {
@@ -474,6 +447,7 @@ export function AttendanceWrapped({
         {/* Card */}
         <div
           ref={cardRef}
+          data-card-ref
           className={`aspect-[9/16] w-full rounded-2xl overflow-hidden shadow-2xl relative ${isCapturing ? 'pointer-events-none' : ''}`}
           style={{ contain: 'layout style paint' }}
         >
