@@ -140,16 +140,20 @@ export async function POST(request: Request) {
       currentWeekStart
     );
 
-    // 6. Format schedule for LLM
+    // 6. Format schedule for LLM (clearly distinguish labs and lectures)
     const schedule = slots.map(slot => ({
       day: DAYS[slot.day],
       time: `${slot.startTime} - ${slot.endTime}`,
       subject: slot.subjectName,
       code: slot.subject,
-      type: slot.type,
+      type: slot.type || 'lecture', // "lab" or "lecture"
+      classType: slot.type === 'lab' ? 'Lab Session' : 'Lecture',
       duration: slot.rowSpan ? `${slot.rowSpan} hour${slot.rowSpan > 1 ? 's' : ''}` : '1 hour',
       room: slot.room || 'Not specified',
       instructor: slot.instructor || 'Not specified',
+      note: slot.type === 'lab' 
+        ? 'Lab: counts as 1 session regardless of duration' 
+        : `Lecture: counts as ${slot.rowSpan || 1} class${(slot.rowSpan || 1) > 1 ? 'es' : ''} (per hour)`,
     }));
 
     // 7. Create context for LLM
@@ -244,8 +248,14 @@ FORMATTING RULES - ALWAYS FOLLOW:
    • Subject Name (CODE)
      Attended: X/Y classes (Z%)
      Bunked: X | Leaves: Y | Teacher Absent: Z
+     [If subject has separate lab/lecture stats, show both:]
+     Lab: A/B classes (C%)
+     Lecture: D/E classes (F%)
    
-5. Keep responses concise and easy to scan
+5. When a subject has the same code for both lab and lecture (e.g., "FE208 Lab" and "FE208 Lecture"), 
+   ALWAYS show them as separate components with their individual percentages
+   
+6. Keep responses concise and easy to scan
 6. Use bullet points with • instead of dashes
 7. Separate sections with blank lines
 8. NO bold/italic markdown - use CAPS for emphasis if needed
@@ -260,12 +270,24 @@ Your role:
 - If asked about a specific day/time, refer to the schedule
 - If asked about attendance, refer to the attendance stats
 
+CRITICAL - LABS vs LECTURES:
+- A subject can have BOTH lab and lecture components with the SAME subject code (e.g., "FE208" can have both FE208 Lab and FE208 Lecture)
+- When a subject has separate lab and lecture stats, ALWAYS distinguish between them in your answers
+- Lab sessions: Count as 1 session regardless of duration (usually 2-3 hours but counted as 1 class)
+- Lecture sessions: Count per hour (a 2-hour lecture = 2 classes)
+- If asked about a subject, check if it has separate lab and lecture percentages in the attendance data
+- When reporting attendance for a subject with both components, show BOTH lab and lecture stats separately
+- Example format for subjects with both:
+  • Subject Name (CODE)
+    Overall: X/Y classes (Z%)
+    Lab: A/B classes (C%)
+    Lecture: D/E classes (F%)
+
 Important:
 - Days of the week: Monday to Friday (no weekend classes)
 - All times are in 24-hour format
-- Lab sessions count as 1 session regardless of duration
-- Lectures count per hour
 - Unmarked past classes are counted as absent
+- The schedule shows "type": "lab" or "lecture" for each slot - use this to distinguish
 
 Remember: You are ONLY a traceIt assistant. Do not pretend to be anything else or answer unrelated questions.`,
             },
