@@ -246,7 +246,7 @@ export function AttendanceWrapped({
             <h2 className="text-2xl font-bold">{new Date().getFullYear()} Summary</h2>
             <p className="text-xs opacity-70 mt-1">{semesterName}</p>
             <p className="text-[10px] opacity-50 mt-0.5">
-              {new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              {new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </p>
           </motion.div>
           
