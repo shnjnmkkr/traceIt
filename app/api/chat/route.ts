@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { calculateAttendanceStats } from '@/lib/attendance-calculator';
-import { format } from 'date-fns';
+import { format, eachDayOfInterval, getDay } from 'date-fns';
 import { rateLimit, RATE_LIMITS, getIdentifier } from '@/lib/rate-limiter';
 
 const groq = new Groq({
@@ -132,6 +132,7 @@ export async function POST(request: Request) {
     const semesterStart = new Date(timetable.start_date);
     const semesterEnd = new Date(timetable.end_date);
     const currentWeekStart = new Date();
+    const today = new Date();
     
     const stats = calculateAttendanceStats(
       slots,
@@ -141,6 +142,49 @@ export async function POST(request: Request) {
       settings,
       currentWeekStart
     );
+
+    // 5a. Calculate total classes per subject for entire semester
+    const calculateTotalSemesterClasses = () => {
+      const allSemesterDates = eachDayOfInterval({ start: semesterStart, end: semesterEnd });
+      const subjectTotals = new Map<string, {
+        total: number;
+        labTotal: number;
+        lectureTotal: number;
+      }>();
+
+      // Initialize all subjects
+      slots.forEach(slot => {
+        if (!subjectTotals.has(slot.subject)) {
+          subjectTotals.set(slot.subject, { total: 0, labTotal: 0, lectureTotal: 0 });
+        }
+      });
+
+      // Count classes for entire semester
+      allSemesterDates.forEach(date => {
+        const dayOfWeek = getDay(date) === 0 ? 6 : getDay(date) - 1;
+        if (dayOfWeek >= 5) return; // Skip weekends
+
+        const daySlots = slots.filter(s => s.day === dayOfWeek);
+        daySlots.forEach(slot => {
+          const stats = subjectTotals.get(slot.subject);
+          if (!stats) return;
+
+          const slotType = slot.type || 'lecture';
+          const weight = slotType === "lab" ? 1 : (slot.rowSpan || 1);
+          stats.total += weight;
+          
+          if (slotType === "lab") {
+            stats.labTotal += 1;
+          } else {
+            stats.lectureTotal += weight;
+          }
+        });
+      });
+
+      return subjectTotals;
+    };
+
+    const semesterTotals = calculateTotalSemesterClasses();
 
     // 6. Format schedule for LLM (clearly distinguish labs and lectures)
     const schedule = slots.map(slot => ({
@@ -169,30 +213,39 @@ export async function POST(request: Request) {
       schedule,
       attendance: {
         overall: `${stats.overall}%`,
-        subjects: stats.subjects.map(s => ({
-          name: s.name,
-          code: s.code,
-          percentage: `${s.percentage}%`,
-          attended: s.attended,
-          total: s.total,
-          bunked: s.bunked,
-          leaves: s.leaves,
-          teacherAbsent: s.teacherAbsent,
-          ...(s.lab && {
-            lab: {
-              attended: s.lab.attended,
-              total: s.lab.total,
-              percentage: `${s.lab.percentage}%`,
-            },
-          }),
-          ...(s.lecture && {
-            lecture: {
-              attended: s.lecture.attended,
-              total: s.lecture.total,
-              percentage: `${s.lecture.percentage}%`,
-            },
-          }),
-        })),
+        subjects: stats.subjects.map(s => {
+          const semesterTotal = semesterTotals.get(s.code);
+          return {
+            name: s.name,
+            code: s.code,
+            percentage: `${s.percentage}%`,
+            attended: s.attended,
+            total: s.total, // Classes occurred so far
+            semesterTotal: semesterTotal?.total || 0, // Total classes in entire semester
+            remaining: Math.max(0, (semesterTotal?.total || 0) - s.total), // Classes remaining
+            bunked: s.bunked,
+            leaves: s.leaves,
+            teacherAbsent: s.teacherAbsent,
+            ...(s.lab && {
+              lab: {
+                attended: s.lab.attended,
+                total: s.lab.total,
+                semesterTotal: semesterTotal?.labTotal || 0,
+                remaining: Math.max(0, (semesterTotal?.labTotal || 0) - s.lab.total),
+                percentage: `${s.lab.percentage}%`,
+              },
+            }),
+            ...(s.lecture && {
+              lecture: {
+                attended: s.lecture.attended,
+                total: s.lecture.total,
+                semesterTotal: semesterTotal?.lectureTotal || 0,
+                remaining: Math.max(0, (semesterTotal?.lectureTotal || 0) - s.lecture.total),
+                percentage: `${s.lecture.percentage}%`,
+              },
+            }),
+          };
+        }),
       },
       settings: {
         targetPercentage: `${settings.targetPercentage}%`,
@@ -215,7 +268,8 @@ export async function POST(request: Request) {
               role: 'system',
               content: `You are the AI assistant for traceIt - a timetable and attendance management app. Answer ONLY questions about schedules and attendance.
 
-Current date: ${format(new Date(), 'EEEE, MMMM dd, yyyy')}
+Current date: ${format(today, 'EEEE, MMMM dd, yyyy')}
+Semester: ${format(semesterStart, 'MMM dd')} - ${format(semesterEnd, 'MMM dd, yyyy')}
 
 Student data:
 ${JSON.stringify(context, null, 2)}
@@ -226,17 +280,29 @@ CRITICAL RULES:
 3. Answer questions immediately using the provided timetable and attendance data.
 4. If asked something unrelated, say: "I only help with timetable and attendance in traceIt."
 
+CALCULATING "HOW MANY MORE CLASSES CAN I MISS":
+For each subject:
+- semesterTotal = total classes in entire semester (from start to end date)
+- total = classes that have occurred so far
+- remaining = semesterTotal - total (classes left in semester)
+- attended = classes attended so far
+- target = targetPercentage% of semesterTotal (round up)
+- minimumNeeded = target - attended (must attend this many more)
+- canMiss = remaining - minimumNeeded (can miss this many)
+
+Example: If semesterTotal=20, attended=5, target=75%:
+- target = 15 classes (75% of 20)
+- minimumNeeded = 15 - 5 = 10 more classes
+- remaining = 20 - 5 = 15 classes left
+- canMiss = 15 - 10 = 5 classes
+
+For lab/lecture breakdown, calculate separately using lab.remaining/lecture.remaining.
+
 RESPONSE FORMAT:
 - No markdown (no **, ##, etc.)
 - Use • for bullets
 - Keep it short and scannable
-- Example format:
-
-Overall: X%
-
-Subjects:
-• Subject (CODE): X/Y classes (Z%)
-  Lab: A/B (C%) | Lecture: D/E (F%)
+- Show calculations clearly
 
 LABS vs LECTURES:
 - Same subject code can have both lab and lecture
