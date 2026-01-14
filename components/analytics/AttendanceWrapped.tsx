@@ -404,126 +404,51 @@ export function AttendanceWrapped({
   ];
 
   const handleDownload = async () => {
-    if (!cardRef.current) return;
-    
-    setIsCapturing(true);
-    const originalSlide = currentSlide;
-    
-    // Switch to summary slide (slide 4 - index 4)
-    setCurrentSlide(4);
-    
-    // Wait for slide transition (300ms) + all animations to complete (max delay is 1.2s) + extra buffer
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    if (!summaryCardRef.current) return;
 
     try {
-      // Hide navigation dots and any other UI elements
-      const progressDots = cardRef.current.querySelector('.progress-dots');
-      if (progressDots) {
-        (progressDots as HTMLElement).style.display = 'none';
-      }
+      // Small delay to ensure the static card is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Disable all animations by adding a class
-      cardRef.current.classList.add('capturing');
-      
-      // Wait a bit more to ensure everything is static
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const canvas = await html2canvas(cardRef.current, {
+      const canvas = await html2canvas(summaryCardRef.current, {
         backgroundColor: '#000000',
-        scale: 3, // Higher scale for better quality
+        scale: 3,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        width: cardRef.current.offsetWidth,
-        height: cardRef.current.offsetHeight,
-        windowWidth: cardRef.current.scrollWidth,
-        windowHeight: cardRef.current.scrollHeight,
+        width: summaryCardRef.current.offsetWidth,
+        height: summaryCardRef.current.offsetHeight,
       });
-
-      // Restore everything
-      cardRef.current.classList.remove('capturing');
-      if (progressDots) {
-        (progressDots as HTMLElement).style.display = 'flex';
-      }
 
       const link = document.createElement("a");
       link.download = `traceIt-${displayName}-attendance-${new Date().getFullYear()}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
-      
-      // Switch back to original slide
-      setCurrentSlide(originalSlide);
     } catch (error) {
       console.error("Error downloading image:", error);
-      setCurrentSlide(originalSlide);
-    } finally {
-      setIsCapturing(false);
     }
   };
 
   const handleShare = async () => {
-    if (!cardRef.current) return;
-    
-    setIsCapturing(true);
-    const originalSlide = currentSlide;
-    
-    // Switch to summary slide (slide 4 - index 4)
-    setCurrentSlide(4);
-    
-    // Wait for slide transition (300ms) + all animations to complete (max delay is 1.2s) + extra buffer
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    if (!summaryCardRef.current) return;
 
     try {
-      // Hide navigation dots and any other UI elements
-      const progressDots = cardRef.current.querySelector('.progress-dots');
-      if (progressDots) {
-        (progressDots as HTMLElement).style.display = 'none';
-      }
+      // Small delay to ensure the static card is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Disable all animations by adding a class
-      cardRef.current.classList.add('capturing');
-      
-      // Force browser reflow and repaint to ensure everything is rendered
-      void cardRef.current.offsetHeight; // Force reflow
-      
-      // Wait for multiple animation frames to ensure browser has painted final state
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      await new Promise(resolve => requestAnimationFrame(resolve));
-      
-      // Additional small delay to ensure everything is fully painted
-      await new Promise(resolve => setTimeout(resolve, 200));
-
-      const canvas = await html2canvas(cardRef.current, {
+      const canvas = await html2canvas(summaryCardRef.current, {
         backgroundColor: '#000000',
-        scale: 3, // Higher scale for better quality
+        scale: 3,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        width: cardRef.current.offsetWidth,
-        height: cardRef.current.offsetHeight,
-        windowWidth: cardRef.current.scrollWidth,
-        windowHeight: cardRef.current.scrollHeight,
-        onclone: (clonedDoc) => {
-          // Ensure all text is visible in the cloned document
-          const clonedCard = clonedDoc.querySelector('[class*="aspect-[9/16]"]');
-          if (clonedCard) {
-            (clonedCard as HTMLElement).style.visibility = 'visible';
-            (clonedCard as HTMLElement).style.opacity = '1';
-          }
-        },
+        width: summaryCardRef.current.offsetWidth,
+        height: summaryCardRef.current.offsetHeight,
       });
-
-      // Restore everything
-      cardRef.current.classList.remove('capturing');
-      if (progressDots) {
-        (progressDots as HTMLElement).style.display = 'flex';
-      }
 
       canvas.toBlob(async (blob) => {
         if (!blob) {
-          setIsCapturing(false);
-          setCurrentSlide(originalSlide);
+          handleDownload();
           return;
         }
 
@@ -549,15 +474,9 @@ export function AttendanceWrapped({
           // Fallback to download
           handleDownload();
         }
-        
-        // Switch back to original slide
-        setCurrentSlide(originalSlide);
-        setIsCapturing(false);
       }, 'image/png', 1.0);
     } catch (error) {
       console.error("Error sharing:", error);
-      setCurrentSlide(originalSlide);
-      setIsCapturing(false);
       handleDownload();
     }
   };
@@ -570,26 +489,111 @@ export function AttendanceWrapped({
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
+  // Static pre-rendered summary card (no animations, always ready for capture)
+  const StaticSummaryCard = () => (
+    <div
+      ref={summaryCardRef}
+      className="aspect-[9/16] w-full rounded-2xl overflow-hidden shadow-2xl relative bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"
+      style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden' }}
+    >
+      <div className="flex flex-col items-center justify-center h-full text-white px-6 py-6">
+        <div className="text-center mb-4">
+          <p className="text-sm font-semibold mb-2 text-white/90">
+            {displayName}'s
+          </p>
+          <h2 className="text-2xl font-bold">{new Date().getFullYear()} Summary</h2>
+          <p className="text-xs opacity-70 mt-1">{semesterName}</p>
+          <p className="text-[10px] opacity-50 mt-0.5">
+            {new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
+        
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 w-full max-w-sm">
+          {/* Overall */}
+          <div className="text-center mb-4 pb-4 border-b border-white/20">
+            <p className="text-xs opacity-70 mb-1">Overall Attendance</p>
+            <p className="text-5xl font-black mb-1">{overallPercentage}%</p>
+            <p className="text-[10px] opacity-60">{totalAttended} of {totalClasses} classes</p>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="text-center bg-white/5 rounded-lg p-2">
+              <p className="text-xl font-bold text-green-300">{totalAttended}</p>
+              <p className="text-[10px] opacity-70">Attended</p>
+            </div>
+            <div className="text-center bg-white/5 rounded-lg p-2">
+              <p className="text-xl font-bold text-red-300">{totalBunked}</p>
+              <p className="text-[10px] opacity-70">Bunked</p>
+            </div>
+            <div className="text-center bg-white/5 rounded-lg p-2">
+              <p className="text-xl font-bold text-purple-300">{subjects.length}</p>
+              <p className="text-[10px] opacity-70">Subjects</p>
+            </div>
+          </div>
+
+          {/* Performance Indicators */}
+          <div className="space-y-2 mb-4 pb-4 border-b border-white/20">
+            <div className="bg-white/5 rounded-lg p-2">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] opacity-70">Best Performance</span>
+                <span className="text-xs font-semibold text-green-300">{bestSubject.percentage}%</span>
+              </div>
+              <p className="text-xs font-medium truncate">{bestSubject.name}</p>
+            </div>
+            <div className="bg-white/5 rounded-lg p-2">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] opacity-70">Needs Attention</span>
+                <span className="text-xs font-semibold text-orange-300">{worstSubject.percentage}%</span>
+              </div>
+              <p className="text-xs font-medium truncate">{worstSubject.name}</p>
+            </div>
+          </div>
+
+          {/* Additional Stats */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-center bg-white/5 rounded-lg p-2">
+              <p className="text-lg font-bold">{Math.round((totalAttended/totalClasses) * 100)}%</p>
+              <p className="text-[10px] opacity-70">Attendance Rate</p>
+            </div>
+            <div className="text-center bg-white/5 rounded-lg p-2">
+              <p className="text-lg font-bold">{totalClasses - totalAttended}</p>
+              <p className="text-[10px] opacity-70">Classes Missed</p>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-[10px] mt-4 text-center opacity-50">
+          Tracked with traceIt
+        </p>
+      </div>
+    </div>
+  );
+
   if (!isOpen) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div className="relative max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-        {/* Close Button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="absolute -top-12 right-0 text-white hover:bg-white/10"
-        >
-          <X className="w-6 h-6" />
-        </Button>
+    <>
+      {/* Static pre-rendered card (hidden, always ready for capture) */}
+      <StaticSummaryCard />
+      
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div className="relative max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+          {/* Close Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="absolute -top-12 right-0 text-white hover:bg-white/10"
+          >
+            <X className="w-6 h-6" />
+          </Button>
 
         {/* Card */}
         <div
@@ -663,5 +667,6 @@ export function AttendanceWrapped({
         </div>
       </div>
     </motion.div>
+    </>
   );
 }
