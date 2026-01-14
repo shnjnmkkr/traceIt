@@ -143,6 +143,49 @@ export async function POST(request: Request) {
       currentWeekStart
     );
 
+    // 5a. Calculate total classes per subject for entire semester (needed for accurate calculations)
+    const calculateTotalSemesterClasses = () => {
+      const allSemesterDates = eachDayOfInterval({ start: semesterStart, end: semesterEnd });
+      const subjectTotals = new Map<string, {
+        total: number;
+        labTotal: number;
+        lectureTotal: number;
+      }>();
+
+      // Initialize all subjects
+      slots.forEach(slot => {
+        if (!subjectTotals.has(slot.subject)) {
+          subjectTotals.set(slot.subject, { total: 0, labTotal: 0, lectureTotal: 0 });
+        }
+      });
+
+      // Count classes for entire semester
+      allSemesterDates.forEach(date => {
+        const dayOfWeek = getDay(date) === 0 ? 6 : getDay(date) - 1;
+        if (dayOfWeek >= 5) return; // Skip weekends
+
+        const daySlots = slots.filter(s => s.day === dayOfWeek);
+        daySlots.forEach(slot => {
+          const stats = subjectTotals.get(slot.subject);
+          if (!stats) return;
+
+          const slotType = slot.type || 'lecture';
+          const weight = slotType === "lab" ? 1 : (slot.rowSpan || 1);
+          stats.total += weight;
+          
+          if (slotType === "lab") {
+            stats.labTotal += 1;
+          } else {
+            stats.lectureTotal += weight;
+          }
+        });
+      });
+
+      return subjectTotals;
+    };
+
+    const semesterTotals = calculateTotalSemesterClasses();
+
     // 6. Format schedule for LLM (clearly distinguish labs and lectures)
     const schedule = slots.map(slot => ({
       day: DAYS[slot.day],
@@ -159,7 +202,7 @@ export async function POST(request: Request) {
         : `Lecture: counts as ${slot.rowSpan || 1} class${(slot.rowSpan || 1) > 1 ? 'es' : ''} (per hour)`,
     }));
 
-    // 7. Create context for LLM (only essential data, no internal calculations)
+    // 7. Create context for LLM with semester totals for accurate calculations
     const context = {
       semester: {
         name: timetable.name,
@@ -171,22 +214,27 @@ export async function POST(request: Request) {
       attendance: {
         overall: `${stats.overall}%`,
         subjects: stats.subjects.map(s => {
+          const semesterTotal = semesterTotals.get(s.code);
           const subjectData: any = {
             name: s.name,
             code: s.code,
             percentage: `${s.percentage}%`,
             attended: s.attended,
-            total: s.total,
+            total: s.total, // Classes occurred so far
+            semesterTotal: semesterTotal?.total || 0, // Total classes in entire semester
+            remaining: Math.max(0, (semesterTotal?.total || 0) - s.total), // Classes remaining in semester
             bunked: s.bunked,
             leaves: s.leaves,
             teacherAbsent: s.teacherAbsent,
           };
           
-          // Only include lab/lecture breakdown if they exist, without internal calculations
+          // Include lab/lecture breakdown with semester totals
           if (s.lab) {
             subjectData.lab = {
               attended: s.lab.attended,
-              total: s.lab.total,
+              total: s.lab.total, // Lab classes occurred so far
+              semesterTotal: semesterTotal?.labTotal || 0, // Total lab classes in semester
+              remaining: Math.max(0, (semesterTotal?.labTotal || 0) - s.lab.total), // Lab classes remaining
               percentage: `${s.lab.percentage}%`,
             };
           }
@@ -194,7 +242,9 @@ export async function POST(request: Request) {
           if (s.lecture) {
             subjectData.lecture = {
               attended: s.lecture.attended,
-              total: s.lecture.total,
+              total: s.lecture.total, // Lecture classes occurred so far
+              semesterTotal: semesterTotal?.lectureTotal || 0, // Total lecture classes in semester
+              remaining: Math.max(0, (semesterTotal?.lectureTotal || 0) - s.lecture.total), // Lecture classes remaining
               percentage: `${s.lecture.percentage}%`,
             };
           }
@@ -203,7 +253,7 @@ export async function POST(request: Request) {
         }),
       },
       settings: {
-        targetPercentage: `${settings.targetPercentage}%`,
+        targetPercentage: settings.targetPercentage, // Number, not string, for calculations
         massBunkCounting: settings.countMassBunkAs,
         teacherAbsentCounting: settings.countTeacherAbsentAs,
       },
@@ -232,20 +282,35 @@ ${JSON.stringify(context, null, 2)}
 CRITICAL RULES:
 1. ALWAYS provide CONTEXT and REFERENCE POINTS - never give numbers without explaining what they mean.
 2. When saying "you can miss X classes", ALWAYS specify the time period (this semester, this week, remaining in semester).
-3. Include current status when giving "can miss" answers (e.g., "You're at 4/7 classes attended, so you can miss 3 more this semester").
+3. Include current status when giving "can miss" answers (e.g., "You've attended 4 out of 7 classes so far, with 56 remaining this semester").
 4. Be CONVERSATIONAL but INFORMATIVE - give complete, actionable information.
 5. Use ONLY the data provided. Don't ask for more details.
 6. If asked something unrelated, say: "I only help with timetable and attendance in traceIt."
 
+CALCULATING "HOW MANY CLASSES CAN I MISS":
+For each subject, use this calculation:
+- semesterTotal = total classes in entire semester (from context)
+- attended = classes attended so far (from context)
+- remaining = classes remaining in semester (from context)
+- target = targetPercentage% of semesterTotal (round up to nearest whole number)
+- minimumNeeded = target - attended (must attend this many more to reach target)
+- canMiss = remaining - minimumNeeded (can miss this many)
+
+IMPORTANT: Labs count towards attendance targets too! Never say "you can miss as many labs as you want" - labs are part of the total attendance requirement.
+
+For subjects with both lab and lecture, calculate separately:
+- Use lecture.semesterTotal, lecture.attended, lecture.remaining for lecture calculations
+- Use lab.semesterTotal, lab.attended, lab.remaining for lab calculations
+- Both contribute to the overall subject attendance target
+
 GOOD RESPONSE EXAMPLES:
-• "For ASM: You've attended 4 out of 7 classes so far (57%). You can miss 3 more lectures this semester and still meet your target."
-• "This week you have 3 lectures and 1 lab. You can skip 1 lecture if needed."
-• "You're at 60% attendance overall. To reach 75%, you need to attend 8 more classes this semester."
+• "For ASM: You've attended 4 out of 7 classes so far (57%), with 56 classes remaining this semester. To meet your 75% target, you need to attend at least 47 classes total. You can miss 13 more classes this semester."
+• "For CS lectures: You've attended 2 lectures so far, with 42 remaining. You need 45 total to meet the target, so you can miss 1 more lecture this semester."
 
 BAD RESPONSE EXAMPLES (DON'T DO THIS):
-• "For ASM, you can miss 3 more lectures and 0 more labs." (No context - is this per week? per semester? what's the current status?)
+• "You can miss as many lab sessions as you want" (WRONG - labs count towards attendance)
+• "For ASM, you can miss 3 more lectures and 0 more labs." (No context, wrong calculation)
 • "You can miss 3 more lectures." (No subject, no time period, no reference point)
-• "Total classes: 7, Classes attended: 4, Classes can miss: 3" (Too technical, no context)
 
 RESPONSE FORMAT:
 - No markdown formatting
