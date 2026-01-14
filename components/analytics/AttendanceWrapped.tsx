@@ -408,8 +408,12 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
-      // Wait a bit for any animations to settle
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Navigate to summary card (2nd last slide)
+      const summarySlideIndex = slides.length - 2;
+      setCurrentSlide(summarySlideIndex);
+      
+      // Wait for slide transition and animations to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
@@ -437,8 +441,12 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
-      // Wait a bit for any animations to settle
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Navigate to summary card (2nd last slide)
+      const summarySlideIndex = slides.length - 2;
+      setCurrentSlide(summarySlideIndex);
+      
+      // Wait for slide transition and animations to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
