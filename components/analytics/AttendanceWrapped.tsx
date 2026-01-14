@@ -482,9 +482,9 @@ export function AttendanceWrapped({
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={currentSlide}
-              initial={isCapturing ? false : { opacity: 0, x: 100 }}
-              animate={isCapturing ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
-              exit={isCapturing ? false : { opacity: 0, x: -100 }}
+              initial={isCapturing ? { opacity: 1, x: 0 } : { opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={isCapturing ? { opacity: 1, x: 0 } : { opacity: 0, x: -100 }}
               transition={isCapturing ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" }}
               className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].gradient}`}
               style={{
