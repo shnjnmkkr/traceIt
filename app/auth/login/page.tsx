@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, Lock, LogIn, UserPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,16 +15,22 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
 
   // Check for error in URL params (from OAuth callback)
   useEffect(() => {
-    const errorParam = searchParams.get('error');
-    if (errorParam) {
-      setError(decodeURIComponent(errorParam));
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const errorParam = params.get('error');
+      if (errorParam) {
+        setError(decodeURIComponent(errorParam));
+        // Clean up URL by removing error param
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('error');
+        window.history.replaceState({}, '', newUrl.toString());
+      }
     }
-  }, [searchParams]);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
