@@ -241,6 +241,18 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                       );
                     })}
                   </div>
+                  
+                  {/* Clear/Unmark button - only show if there's a marked status */}
+                  {(currentStatus !== "upcoming" && currentStatus !== "unmarked") && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => onStatusChange("clear")}
+                      className="w-full mt-3 p-3 rounded-lg border-2 border-dashed border-muted-foreground/50 text-muted-foreground hover:bg-muted hover:border-muted-foreground transition-all text-sm font-medium"
+                    >
+                      Clear / Unmark
+                    </motion.button>
+                  )}
                 </div>
 
                 {/* Actions */}

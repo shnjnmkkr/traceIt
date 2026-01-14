@@ -128,3 +128,41 @@ export async function PUT(request: Request) {
     );
   }
 }
+
+// DELETE - Clear/unmark attendance for a slot on a specific date
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createClient();
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { slotId, date } = body;
+
+    if (!slotId || !date) {
+      return NextResponse.json({ error: 'Slot ID and date required' }, { status: 400 });
+    }
+
+    // Delete the attendance record
+    const { error } = await supabase
+      .from('attendance_records')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('slot_id', slotId)
+      .eq('date', date);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Error clearing attendance:', error);
+    return NextResponse.json(
+      { error: error.message || 'Failed to clear attendance' },
+      { status: 500 }
+    );
+  }
+}

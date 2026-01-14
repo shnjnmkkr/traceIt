@@ -144,6 +144,30 @@ export default function DashboardPage() {
   const handleSlotUpdate = async (slotId: string, date: string, newStatus: string) => {
     const key = `${date}-${slotId}`;
     
+    // If clearing, delete the record
+    if (newStatus === "clear") {
+      // Optimistic update - remove from map
+      setAttendanceRecords(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(key);
+        return newMap;
+      });
+      
+      // Delete from database
+      try {
+        await fetch('/api/attendance', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slotId, date }),
+        });
+      } catch (error) {
+        console.error('Error clearing attendance:', error);
+        // Revert on error
+        router.refresh();
+      }
+      return;
+    }
+    
     // Optimistic update
     setAttendanceRecords(prev => {
       const newMap = new Map(prev);
