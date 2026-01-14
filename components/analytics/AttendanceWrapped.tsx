@@ -99,7 +99,7 @@ export function AttendanceWrapped({
             transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
             className="relative"
           >
-            <div className="text-9xl font-black mb-6 relative">
+            <div className="text-7xl font-black mb-6 relative">
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
