@@ -1,6 +1,6 @@
 "use client";
 
-import { Analytics } from "@/types";
+import { Analytics, UserSettings } from "@/types";
 import { OverallProgress } from "@/components/analytics/OverallProgress";
 import { SubjectBreakdown } from "@/components/analytics/SubjectBreakdown";
 import { WeeklyTrendChart } from "@/components/analytics/WeeklyTrendChart";
@@ -8,9 +8,20 @@ import { motion } from "framer-motion";
 
 interface AnalyticsSectionProps {
   analytics: Analytics;
+  settings?: UserSettings;
+  onSettingsChange?: (settings: UserSettings) => void;
 }
 
-export function AnalyticsSection({ analytics }: AnalyticsSectionProps) {
+export function AnalyticsSection({ analytics, settings, onSettingsChange }: AnalyticsSectionProps) {
+  const includeLabsInOverall = settings?.includeLabsInOverall !== false;
+  
+  const handleToggleLabs = async (include: boolean) => {
+    if (settings && onSettingsChange) {
+      const newSettings = { ...settings, includeLabsInOverall: include };
+      await onSettingsChange(newSettings);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -26,6 +37,8 @@ export function AnalyticsSection({ analytics }: AnalyticsSectionProps) {
       <OverallProgress
         percentage={analytics.overall}
         target={analytics.target}
+        includeLabsInOverall={includeLabsInOverall}
+        onToggleLabs={handleToggleLabs}
       />
 
       {/* Charts Grid */}
