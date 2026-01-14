@@ -407,25 +407,69 @@ export function AttendanceWrapped({
     if (!summaryCardRef.current) return;
 
     try {
-      // Small delay to ensure the static card is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 100));
+      setIsCapturing(true);
+      
+      // Make the static card visible and positioned properly for capture
+      const card = summaryCardRef.current;
+      const originalStyle = {
+        position: card.style.position,
+        left: card.style.left,
+        top: card.style.top,
+        visibility: card.style.visibility,
+        opacity: card.style.opacity,
+        zIndex: card.style.zIndex,
+      };
 
-      const canvas = await html2canvas(summaryCardRef.current, {
-        backgroundColor: '#000000',
-        scale: 3,
+      // Temporarily make it visible and position it on-screen
+      card.style.position = 'fixed';
+      card.style.left = '50%';
+      card.style.top = '50%';
+      card.style.transform = 'translate(-50%, -50%)';
+      card.style.visibility = 'visible';
+      card.style.opacity = '1';
+      card.style.zIndex = '9999';
+      card.style.width = '400px';
+      card.style.height = 'auto';
+
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => requestAnimationFrame(resolve));
+
+      const canvas = await html2canvas(card, {
+        backgroundColor: '#0f172a',
+        scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        width: summaryCardRef.current.offsetWidth,
-        height: summaryCardRef.current.offsetHeight,
+        onclone: (clonedDoc) => {
+          const clonedCard = clonedDoc.querySelector(`[data-static-card]`) as HTMLElement;
+          if (clonedCard) {
+            clonedCard.style.visibility = 'visible';
+            clonedCard.style.opacity = '1';
+          }
+        },
       });
+
+      // Restore original styles
+      card.style.position = originalStyle.position;
+      card.style.left = originalStyle.left;
+      card.style.top = originalStyle.top;
+      card.style.visibility = originalStyle.visibility;
+      card.style.opacity = originalStyle.opacity;
+      card.style.zIndex = originalStyle.zIndex;
+      card.style.transform = '';
+      card.style.width = '';
+      card.style.height = '';
 
       const link = document.createElement("a");
       link.download = `traceIt-${displayName}-attendance-${new Date().getFullYear()}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
+      
+      setIsCapturing(false);
     } catch (error) {
       console.error("Error downloading image:", error);
+      setIsCapturing(false);
     }
   };
 
@@ -433,20 +477,63 @@ export function AttendanceWrapped({
     if (!summaryCardRef.current) return;
 
     try {
-      // Small delay to ensure the static card is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 100));
+      setIsCapturing(true);
+      
+      // Make the static card visible and positioned properly for capture
+      const card = summaryCardRef.current;
+      const originalStyle = {
+        position: card.style.position,
+        left: card.style.left,
+        top: card.style.top,
+        visibility: card.style.visibility,
+        opacity: card.style.opacity,
+        zIndex: card.style.zIndex,
+      };
 
-      const canvas = await html2canvas(summaryCardRef.current, {
-        backgroundColor: '#000000',
-        scale: 3,
+      // Temporarily make it visible and position it on-screen
+      card.style.position = 'fixed';
+      card.style.left = '50%';
+      card.style.top = '50%';
+      card.style.transform = 'translate(-50%, -50%)';
+      card.style.visibility = 'visible';
+      card.style.opacity = '1';
+      card.style.zIndex = '9999';
+      card.style.width = '400px';
+      card.style.height = 'auto';
+
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => requestAnimationFrame(resolve));
+
+      const canvas = await html2canvas(card, {
+        backgroundColor: '#0f172a',
+        scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        width: summaryCardRef.current.offsetWidth,
-        height: summaryCardRef.current.offsetHeight,
+        onclone: (clonedDoc) => {
+          const clonedCard = clonedDoc.querySelector(`[data-static-card]`) as HTMLElement;
+          if (clonedCard) {
+            clonedCard.style.visibility = 'visible';
+            clonedCard.style.opacity = '1';
+          }
+        },
       });
 
+      // Restore original styles
+      card.style.position = originalStyle.position;
+      card.style.left = originalStyle.left;
+      card.style.top = originalStyle.top;
+      card.style.visibility = originalStyle.visibility;
+      card.style.opacity = originalStyle.opacity;
+      card.style.zIndex = originalStyle.zIndex;
+      card.style.transform = '';
+      card.style.width = '';
+      card.style.height = '';
+
       canvas.toBlob(async (blob) => {
+        setIsCapturing(false);
+        
         if (!blob) {
           handleDownload();
           return;
@@ -477,6 +564,7 @@ export function AttendanceWrapped({
       }, 'image/png', 1.0);
     } catch (error) {
       console.error("Error sharing:", error);
+      setIsCapturing(false);
       handleDownload();
     }
   };
@@ -493,8 +581,9 @@ export function AttendanceWrapped({
   const StaticSummaryCard = () => (
     <div
       ref={summaryCardRef}
+      data-static-card
       className="aspect-[9/16] w-full rounded-2xl overflow-hidden shadow-2xl relative bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"
-      style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden' }}
+      style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden', opacity: '0' }}
     >
       <div className="flex flex-col items-center justify-center h-full text-white px-6 py-6">
         <div className="text-center mb-4">

@@ -165,7 +165,7 @@ export async function POST(request: Request) {
   }
 }
 
-// PATCH - Increment usage count and auto-upvote
+// PATCH - Increment usage count and auto-upvote, or update template name (admin only)
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient();
@@ -177,13 +177,36 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { templateId } = body;
+    const { templateId, name } = body;
 
     if (!templateId) {
       return NextResponse.json({ error: 'Template ID required' }, { status: 400 });
     }
 
-    // Increment usage count
+    // If name is provided, this is an admin update request
+    if (name !== undefined) {
+      const userIsAdmin = await isAdmin(user.id);
+      if (!userIsAdmin) {
+        return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
+      }
+
+      if (typeof name !== 'string' || name.length === 0 || name.length > 100) {
+        return NextResponse.json({ error: 'Name must be between 1 and 100 characters' }, { status: 400 });
+      }
+
+      const { data, error } = await supabase
+        .from('community_templates')
+        .update({ name })
+        .eq('id', templateId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      return NextResponse.json({ success: true, template: data });
+    }
+
+    // Otherwise, increment usage count and auto-upvote
     const { error } = await supabase.rpc('increment_template_usage', {
       template_id: templateId,
     });

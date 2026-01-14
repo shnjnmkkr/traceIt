@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Trash2, Search, Users, TrendingUp, ChevronUp, ChevronDown, ArrowLeft, Eye, X } from "lucide-react";
+import { Shield, Trash2, Search, Users, TrendingUp, ChevronUp, ChevronDown, ArrowLeft, Eye, X, Edit2, Check, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
@@ -37,6 +37,8 @@ export default function AdminTemplatesPage() {
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'usage' | 'votes'>('newest');
   const [viewingTemplate, setViewingTemplate] = useState<CommunityTemplate | null>(null);
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState<string>('');
 
   useEffect(() => {
     checkAdminAndFetch();
@@ -112,6 +114,46 @@ export default function AdminTemplatesPage() {
       alert('Failed to delete template');
     } finally {
       setDeletingTemplateId(null);
+    }
+  };
+
+  const handleStartEdit = (template: CommunityTemplate) => {
+    setEditingTemplateId(template.id);
+    setEditingName(template.name);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTemplateId(null);
+    setEditingName('');
+  };
+
+  const handleSaveEdit = async (templateId: string) => {
+    if (!editingName.trim()) {
+      alert('Template name cannot be empty');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/community-templates', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateId, name: editingName.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setTemplates(prev => prev.map(t => 
+          t.id === templateId ? { ...t, name: editingName.trim() } : t
+        ));
+        setEditingTemplateId(null);
+        setEditingName('');
+      } else {
+        alert(data.error || 'Failed to update template name');
+      }
+    } catch (error) {
+      console.error('Error updating template name:', error);
+      alert('Failed to update template name');
     }
   };
 
@@ -227,28 +269,73 @@ export default function AdminTemplatesPage() {
               >
                 <Card className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-mono font-semibold text-sm flex-1">{template.name}</h3>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-primary hover:text-primary hover:bg-primary/10"
-                        onClick={() => setViewingTemplate(template)}
-                        title="View template content"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(template.id, template.name)}
-                        disabled={deletingTemplateId === template.id}
-                        title="Delete template"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    {editingTemplateId === template.id ? (
+                      <div className="flex-1 flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          className="flex-1 bg-muted border border-border rounded px-2 py-1 text-sm font-mono font-semibold outline-none focus:ring-2 focus:ring-primary"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit(template.id);
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-green-600 hover:text-green-600 hover:bg-green-600/10"
+                          onClick={() => handleSaveEdit(template.id)}
+                          title="Save"
+                        >
+                          <Check className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={handleCancelEdit}
+                          title="Cancel"
+                        >
+                          <XIcon className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="font-mono font-semibold text-sm flex-1">{template.name}</h3>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                            onClick={() => setViewingTemplate(template)}
+                            title="View template content"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-blue-600 hover:text-blue-600 hover:bg-blue-600/10"
+                            onClick={() => handleStartEdit(template)}
+                            title="Edit template name"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDelete(template.id, template.name)}
+                            disabled={deletingTemplateId === template.id}
+                            title="Delete template"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {template.description && (
