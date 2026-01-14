@@ -412,8 +412,8 @@ export function AttendanceWrapped({
     // Switch to summary slide (slide 4 - index 4)
     setCurrentSlide(4);
     
-    // Wait for slide transition (300ms) + all animations to complete (max delay is 1.2s)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Wait for slide transition (300ms) + all animations to complete (max delay is 1.2s) + extra buffer
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     try {
       // Hide navigation dots and any other UI elements
@@ -426,7 +426,7 @@ export function AttendanceWrapped({
       cardRef.current.classList.add('capturing');
       
       // Wait a bit more to ensure everything is static
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#000000',
@@ -470,8 +470,8 @@ export function AttendanceWrapped({
     // Switch to summary slide (slide 4 - index 4)
     setCurrentSlide(4);
     
-    // Wait for slide transition (300ms) + all animations to complete (max delay is 1.2s)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Wait for slide transition (300ms) + all animations to complete (max delay is 1.2s) + extra buffer
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     try {
       // Hide navigation dots and any other UI elements
@@ -484,7 +484,7 @@ export function AttendanceWrapped({
       cardRef.current.classList.add('capturing');
       
       // Wait a bit more to ensure everything is static
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#000000',
