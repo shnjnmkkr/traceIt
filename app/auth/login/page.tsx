@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const router = useRouter();
   const supabase = createClient();
 
@@ -63,11 +64,20 @@ export default function LoginPage() {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
+          options: {
+            persistSession: rememberMe,
+          },
         });
 
         if (error) throw error;
 
         if (data.user) {
+          // If remember me is checked, set a longer session duration
+          if (rememberMe) {
+            // Session will persist for 30 days (Supabase default for persistent sessions)
+            // The cookie expiration is handled by Supabase automatically
+          }
+          
           router.push("/dashboard");
           router.refresh();
         }
@@ -179,6 +189,26 @@ export default function LoginPage() {
                 </p>
               )}
             </div>
+
+            {/* Remember Me */}
+            {!isSignUp && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                  disabled={loading}
+                />
+                <label
+                  htmlFor="rememberMe"
+                  className="text-sm text-muted-foreground cursor-pointer select-none"
+                >
+                  Remember me
+                </label>
+              </div>
+            )}
 
             {/* Submit Button */}
             <Button

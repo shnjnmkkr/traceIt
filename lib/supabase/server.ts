@@ -14,7 +14,15 @@ export async function createClient() {
         },
         set(name: string, value: string, options: CookieOptions) {
           try {
-            cookieStore.set({ name, value, ...options });
+            // Set longer expiration for persistent sessions (30 days)
+            const cookieOptions: CookieOptions = {
+              ...options,
+              maxAge: name.includes('auth-token') ? 60 * 60 * 24 * 30 : options.maxAge, // 30 days for auth tokens
+              sameSite: 'lax' as const,
+              secure: process.env.NODE_ENV === 'production',
+              httpOnly: false, // Allow client-side access for Supabase
+            };
+            cookieStore.set({ name, value, ...cookieOptions });
           } catch (error) {
             // The `set` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
