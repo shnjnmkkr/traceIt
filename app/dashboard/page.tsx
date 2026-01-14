@@ -54,6 +54,7 @@ export default function DashboardPage() {
     countMassBunkAs: "absent",
     countTeacherAbsentAs: "attended",
     showAnalytics: true,
+    includeLabsInOverall: true,
   });
   const [attendanceRecords, setAttendanceRecords] = useState<Map<string, string>>(new Map());
   
