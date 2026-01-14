@@ -228,18 +228,18 @@ export function AttendanceWrapped({
     {
       gradient: "from-slate-900 via-purple-900 to-slate-900",
       content: (
-        <div className="flex flex-col h-full w-full text-white px-6 py-6 overflow-y-auto">
+        <div className="flex flex-col items-center justify-start h-full w-full text-white px-4 py-4 overflow-hidden">
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-center mb-4 flex-shrink-0"
+            className="text-center mb-3 w-full"
           >
             <motion.p
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 }}
-              className="text-sm font-semibold mb-2 text-white/90"
+              className="text-sm font-semibold mb-1 text-white/90"
             >
               {displayName}'s
             </motion.p>
@@ -254,17 +254,17 @@ export function AttendanceWrapped({
             initial={{ opacity: 0, scale: 0.9 }}
             animate={isCapturing ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
             transition={isCapturing ? { duration: 0 } : { delay: 0.3 }}
-            className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 w-full flex-shrink-0"
+            className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 w-full max-w-sm"
           >
             {/* Overall */}
-            <div className="text-center mb-4 pb-4 border-b border-white/20">
+            <div className="text-center mb-3 pb-3 border-b border-white/20">
               <p className="text-xs opacity-70 mb-1">Overall Attendance</p>
               <p className="text-5xl font-black mb-1">{overallPercentage}%</p>
               <p className="text-[10px] opacity-60">{totalAttended} of {totalClasses} classes</p>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="grid grid-cols-3 gap-2 mb-3">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={isCapturing ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
@@ -295,7 +295,7 @@ export function AttendanceWrapped({
             </div>
 
             {/* Performance Indicators */}
-            <div className="space-y-2 mb-4 pb-4 border-b border-white/20">
+            <div className="space-y-2 mb-3 pb-3 border-b border-white/20">
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={isCapturing ? { opacity: 1 } : { opacity: 1 }}
@@ -349,7 +349,7 @@ export function AttendanceWrapped({
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
             transition={{ delay: 1.2 }}
-            className="text-[10px] mt-4 text-center flex-shrink-0"
+            className="text-[10px] mt-3 text-center w-full"
           >
             Tracked with traceIt
           </motion.p>
