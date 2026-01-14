@@ -376,6 +376,24 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDatesChange = async (startDate: string, endDate: string) => {
+    if (!timetable) return;
+    
+    try {
+      await fetch('/api/timetable', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: timetable.id, startDate, endDate }),
+      });
+      
+      setTimetable(prev => prev ? { ...prev, startDate, endDate } : null);
+      router.refresh();
+    } catch (error) {
+      console.error('Error updating timetable dates:', error);
+      throw error;
+    }
+  };
+
   // Bulk marking
   const handleBulkMark = async (date: string, status: string) => {
     if (!timetable) return;
