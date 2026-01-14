@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import { calculateAttendanceStats } from '@/lib/attendance-calculator';
-import { format, eachDayOfInterval, getDay } from 'date-fns';
+import { format, eachDayOfInterval, getDay, differenceInDays, differenceInWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { rateLimit, RATE_LIMITS, getIdentifier } from '@/lib/rate-limiter';
 
 const groq = new Groq({
@@ -186,6 +186,100 @@ export async function POST(request: Request) {
 
     const semesterTotals = calculateTotalSemesterClasses();
 
+    // 5b. Calculate overall semester statistics and additional metrics
+    const calculateOverallStats = () => {
+      // Overall totals
+      let totalAttended = 0;
+      let totalSoFar = 0;
+      let totalInSemester = 0;
+      
+      stats.subjects.forEach(s => {
+        totalAttended += s.attended;
+        totalSoFar += s.total;
+        const semesterTotal = semesterTotals.get(s.code);
+        totalInSemester += semesterTotal?.total || 0;
+      });
+      
+      const totalRemaining = Math.max(0, totalInSemester - totalSoFar);
+      const overallTarget = Math.ceil((settings.targetPercentage / 100) * totalInSemester);
+      const overallMinimumNeeded = Math.max(0, overallTarget - totalAttended);
+      const overallCanMiss = Math.max(0, totalRemaining - overallMinimumNeeded);
+      
+      // Time calculations
+      const daysRemaining = Math.max(0, differenceInDays(semesterEnd, today));
+      const weeksRemaining = Math.ceil(daysRemaining / 7);
+      const totalDays = differenceInDays(semesterEnd, semesterStart);
+      const daysElapsed = Math.max(0, differenceInDays(today, semesterStart));
+      const progressPercentage = totalDays > 0 ? Math.round((daysElapsed / totalDays) * 100) : 0;
+      
+      // Current week calculations
+      const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+      const weekEndDate = weekEnd < semesterEnd ? weekEnd : semesterEnd;
+      
+      let weekClasses = 0;
+      const weekDates = eachDayOfInterval({ start: weekStart, end: weekEndDate });
+      weekDates.forEach(date => {
+        const dayOfWeek = getDay(date) === 0 ? 6 : getDay(date) - 1;
+        if (dayOfWeek >= 5) return; // Skip weekends
+        
+        const daySlots = slots.filter(s => s.day === dayOfWeek);
+        daySlots.forEach(slot => {
+          const slotType = slot.type || 'lecture';
+          const weight = slotType === "lab" ? 1 : (slot.rowSpan || 1);
+          weekClasses += weight;
+        });
+      });
+      
+      // Average classes per week
+      const totalWeeks = Math.ceil(totalDays / 7);
+      const avgClassesPerWeek = totalWeeks > 0 ? Math.round(totalInSemester / totalWeeks) : 0;
+      
+      // Projected attendance (if maintaining current pace)
+      const currentPace = totalSoFar > 0 ? totalAttended / totalSoFar : 0;
+      const projectedAttended = totalAttended + (totalRemaining * currentPace);
+      const projectedPercentage = totalInSemester > 0 ? Math.round((projectedAttended / totalInSemester) * 10000) / 100 : 0;
+      
+      // Percentage difference from target
+      const currentPercentage = parseFloat(stats.overall.toString());
+      const percentageFromTarget = currentPercentage - settings.targetPercentage;
+      
+      return {
+        overall: {
+          attended: totalAttended,
+          totalSoFar: totalSoFar,
+          totalInSemester: totalInSemester,
+          remaining: totalRemaining,
+          targetClasses: overallTarget,
+          minimumNeeded: overallMinimumNeeded,
+          canMiss: overallCanMiss,
+          currentPercentage: currentPercentage,
+          targetPercentage: settings.targetPercentage,
+          percentageFromTarget: percentageFromTarget,
+        },
+        time: {
+          daysRemaining: daysRemaining,
+          weeksRemaining: weeksRemaining,
+          totalDays: totalDays,
+          daysElapsed: daysElapsed,
+          progressPercentage: progressPercentage,
+        },
+        currentWeek: {
+          classes: weekClasses,
+          startDate: format(weekStart, 'MMM dd'),
+          endDate: format(weekEndDate, 'MMM dd, yyyy'),
+        },
+        projections: {
+          avgClassesPerWeek: avgClassesPerWeek,
+          currentPace: Math.round(currentPace * 10000) / 100,
+          projectedAttended: Math.round(projectedAttended),
+          projectedPercentage: projectedPercentage,
+        },
+      };
+    };
+
+    const overallStats = calculateOverallStats();
+
     // 6. Format schedule for LLM (clearly distinguish labs and lectures)
     const schedule = slots.map(slot => ({
       day: DAYS[slot.day],
@@ -211,6 +305,7 @@ export async function POST(request: Request) {
         endDate: format(semesterEnd, 'MMM dd, yyyy'),
       },
       schedule,
+      overallStats: overallStats,
       attendance: {
         overall: `${stats.overall}%`,
         subjects: stats.subjects.map(s => {
@@ -318,6 +413,8 @@ CRITICAL RULES:
 
 USING THE DATA:
 All calculations are already done for you! Use these pre-calculated values from the context:
+
+FOR EACH SUBJECT:
 - totalSoFar = classes that have occurred so far (up to today)
 - totalInSemester = total classes in entire semester
 - remaining = classes remaining in semester
@@ -325,16 +422,50 @@ All calculations are already done for you! Use these pre-calculated values from 
 - targetClasses = number of classes needed to meet target percentage
 - minimumNeeded = must attend this many more classes to reach target
 - canMiss = can miss this many classes this semester
+- Same fields available for lab and lecture breakdowns
+
+FOR OVERALL STATISTICS (overallStats):
+- overall.attended = total classes attended across all subjects
+- overall.totalSoFar = total classes occurred so far
+- overall.totalInSemester = total classes in entire semester
+- overall.remaining = total classes remaining
+- overall.targetClasses = total classes needed to meet target
+- overall.minimumNeeded = must attend this many more classes overall
+- overall.canMiss = can miss this many classes overall this semester
+- overall.currentPercentage = current overall attendance percentage
+- overall.percentageFromTarget = how many percentage points above/below target
+
+FOR TIME INFORMATION (overallStats.time):
+- daysRemaining = days left in semester
+- weeksRemaining = weeks left in semester
+- daysElapsed = days since semester started
+- progressPercentage = semester progress (0-100%)
+
+FOR CURRENT WEEK (overallStats.currentWeek):
+- classes = number of classes scheduled this week
+- startDate = week start date
+- endDate = week end date
+
+FOR PROJECTIONS (overallStats.projections):
+- avgClassesPerWeek = average classes per week in semester
+- currentPace = current attendance rate (0-100%)
+- projectedAttended = projected total classes attended if maintaining current pace
+- projectedPercentage = projected attendance percentage if maintaining current pace
 
 IMPORTANT: 
 - Labs count towards attendance targets too! Never say "you can miss as many labs as you want"
 - For subjects with both lab and lecture, use the separate lab/lecture breakdowns
 - Always clarify: "totalSoFar" means classes occurred so far, "totalInSemester" means total in entire semester
+- Use overallStats for questions about overall attendance, semester progress, or projections
+- Use currentWeek for questions about this week's classes
 
 GOOD RESPONSE EXAMPLES:
 • "For ASM: You've attended 4 out of 7 classes so far (57%), with 56 classes remaining this semester. To meet your 75% target, you need to attend at least 47 classes total. You can miss 13 more classes this semester."
 • "For CS lectures: You've attended 2 lectures so far, with 42 remaining. You need 45 total to meet the target, so you can miss 1 more lecture this semester."
-• "For PPE: You've attended 2 out of 6 classes so far (33%), with 56 classes remaining. You need 47 classes total to meet your target, so you can miss 11 more classes this semester."
+• "Overall: You've attended 17 out of 35 classes so far (49%), with 28 classes remaining. You need 26 more classes to meet your 75% target, so you can miss 2 more classes this semester."
+• "This week: You have 8 classes scheduled from Mon to Fri. You can miss 1 class this week if needed."
+• "Progress: You're 30% through the semester with 10 weeks remaining. At your current pace of 49%, you're projected to finish at 49% - you need to improve to reach your 75% target."
+• "You're currently 26 percentage points below your 75% target. You need to attend 26 more classes to catch up."
 
 BAD RESPONSE EXAMPLES (DON'T DO THIS):
 • "You can miss as many lab sessions as you want" (WRONG - labs count towards attendance)
