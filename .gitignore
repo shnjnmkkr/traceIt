@@ -24,3 +24,6 @@ next-env.d.ts
 Thumbs.db
 
 supabase/
+
+# Bug reports
+public/bug-reports/

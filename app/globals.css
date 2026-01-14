@@ -58,3 +58,18 @@
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   letter-spacing: 0.05em;
 }
+
+/* AI Chat message formatting */
+.ai-message-content {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.ai-message-content p {
+  margin-bottom: 0.5em;
+}
+
+.ai-message-content ul,
+.ai-message-content ol {
+  margin-left: 1.5em;
+  margin-bottom: 0.5em;
+}

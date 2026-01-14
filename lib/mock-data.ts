@@ -4,8 +4,8 @@ import { Timetable, ChatMessage, UserSettings } from "@/types";
 export const defaultTimetable: Timetable = {
   id: "tt-1",
   userId: "user-1",
-  name: "Spring 2026 - CSE A",
-  semester: "Spring 2026",
+  name: "Even Semester 2026 - CSE A",
+  semester: "Even Semester 2026",
   section: "CSE A",
   startDate: "2026-01-01",
   endDate: "2026-04-22",

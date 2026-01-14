@@ -3,12 +3,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Loader2, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Sparkles } from "lucide-react";
 import { addWeeks, subWeeks, startOfWeek, format } from "date-fns";
 import { WeekSelector } from "@/components/dashboard/WeekSelector";
 import { TimetableHeader } from "@/components/dashboard/TimetableHeader";
 import { TimetableGrid } from "@/components/dashboard/TimetableGrid";
 import { AnalyticsSection } from "@/components/analytics/AnalyticsSection";
+import { AttendanceWrapped } from "@/components/analytics/AttendanceWrapped";
 import { ResizableAIPanel } from "@/components/dashboard/ResizableAIPanel";
 import { ResizableLeftPanel } from "@/components/dashboard/ResizableLeftPanel";
 import { AIChatPanel } from "@/components/dashboard/AIChatPanel";
@@ -31,6 +32,7 @@ export default function DashboardPage() {
   const [isAIPanelOpen, setIsAIPanelOpen] = useState(false); // Default closed for mobile-first
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isBulkMarkingOpen, setIsBulkMarkingOpen] = useState(false);
+  const [isWrappedOpen, setIsWrappedOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   
@@ -529,10 +531,21 @@ export default function DashboardPage() {
           {/* Analytics Section (Below Timetable) */}
           {settings.showAnalytics && (
             <div className="pt-4">
-              <h2 className="text-lg font-mono font-semibold mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-primary" />
-                Analytics
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-mono font-semibold flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-primary" />
+                  Analytics
+                </h2>
+                <Button
+                  onClick={() => setIsWrappedOpen(true)}
+                  size="sm"
+                  variant="outline"
+                  className="border-2 border-border hover:border-foreground hover:bg-muted font-mono"
+                >
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  View Wrapped
+                </Button>
+              </div>
               <AnalyticsSection
                 overall={analytics.overall}
                 target={settings.targetPercentage}
@@ -731,6 +744,19 @@ export default function DashboardPage() {
         onClose={() => setIsBulkMarkingOpen(false)}
         onBulkMark={handleBulkMark}
       />
+
+      {/* Attendance Wrapped */}
+      {timetable && (
+        <AttendanceWrapped
+          isOpen={isWrappedOpen}
+          onClose={() => setIsWrappedOpen(false)}
+          overallPercentage={analytics.overall}
+          subjects={analytics.subjects}
+          semesterName={timetable.name || "Current Semester"}
+          startDate={timetable.startDate}
+          endDate={timetable.endDate}
+        />
+      )}
     </div>
   );
 }

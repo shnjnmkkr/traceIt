@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, LogOut, Plus, Save, Trash2, GripHorizontal, Merge } from "lucide-react";
+import { Loader2, LogOut, Plus, Save, Trash2, GripHorizontal, Merge, Upload, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import { ImageUploadDialog } from "@/components/timetable/ImageUploadDialog";
+import { CommunityTemplates } from "@/components/timetable/CommunityTemplates";
+import { ShareTemplateDialog } from "@/components/timetable/ShareTemplateDialog";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
@@ -31,8 +34,8 @@ export default function CreateTimetablePage() {
   const [error, setError] = useState("");
 
   // Timetable metadata
-  const [name, setName] = useState("Spring 2026");
-  const [semester, setSemester] = useState("Spring 2026");
+  const [name, setName] = useState("Even Semester 2026");
+  const [semester, setSemester] = useState("Even Semester 2026");
   const [section, setSection] = useState("");
   const [startDate, setStartDate] = useState("2026-01-01");
   const [endDate, setEndDate] = useState("2026-04-22");
@@ -41,6 +44,12 @@ export default function CreateTimetablePage() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [editingSlot, setEditingSlot] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  
+  // New features
+  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [showCommunityPanel, setShowCommunityPanel] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [usedCommunityTemplate, setUsedCommunityTemplate] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -199,13 +208,40 @@ export default function CreateTimetablePage() {
         throw new Error(data.error || 'Failed to create timetable');
       }
 
-      // Hard redirect to ensure fresh data load
-      window.location.href = '/dashboard';
+      // If they didn't use a community template, ask if they want to share
+      if (!usedCommunityTemplate) {
+        setShowShareDialog(true);
+      } else {
+        // Hard redirect to ensure fresh data load
+        window.location.href = '/dashboard';
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handler for community template selection
+  const handleTemplateSelect = (template: any) => {
+    const templateSlots = template.template_data.slots || [];
+    const newSlots = templateSlots.map((slot: any, idx: number) => ({
+      ...slot,
+      id: `slot-${Date.now()}-${idx}`,
+    }));
+    setSlots(newSlots);
+    setUsedCommunityTemplate(true);
+    setShowCommunityPanel(false);
+  };
+
+  // Handler for image extraction
+  const handleImageExtracted = (extractedSlots: any[]) => {
+    const newSlots = extractedSlots.map((slot: any, idx: number) => ({
+      ...slot,
+      id: `slot-${Date.now()}-${idx}`,
+    }));
+    setSlots(newSlots);
+    setShowImageUpload(false);
   };
 
   if (authLoading) {
@@ -300,8 +336,10 @@ export default function CreateTimetablePage() {
           </div>
         </Card>
 
-        {/* Timetable Grid - DAYS AS ROWS, TIME AS COLUMNS */}
-        <Card className="p-6 overflow-x-auto">
+        {/* Main Content Area with Community Panel */}
+        <div className="flex gap-4">
+          {/* Timetable Grid - DAYS AS ROWS, TIME AS COLUMNS */}
+          <Card className={`p-6 overflow-x-auto transition-all ${showCommunityPanel ? 'w-2/3' : 'w-full'}`}>
           <div className="min-w-[1000px]">
             {/* Header Row - Time Slots */}
             <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: `100px repeat(${TIME_SLOTS.length}, 1fr)` }}>
@@ -486,25 +524,71 @@ export default function CreateTimetablePage() {
             <div className="text-sm text-muted-foreground">
               {slots.length} classes added
             </div>
-            <Button
-              onClick={handleSubmit}
-              disabled={loading || slots.length === 0}
-              className="gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowImageUpload(true)}
+                variant="outline"
+                size="sm"
+                className="gap-2 font-mono"
+              >
+                <Upload className="w-4 h-4" />
+                Upload Image
+              </Button>
+              
+              <Button
+                onClick={() => setShowCommunityPanel(!showCommunityPanel)}
+                variant="outline"
+                size="sm"
+                className="gap-2 font-mono"
+              >
+                <Users className="w-4 h-4" />
+                {showCommunityPanel ? 'Hide' : 'Show'} Templates
+              </Button>
+              
+              <Button
+                onClick={handleSubmit}
+                disabled={loading || slots.length === 0}
+                className="gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
                   <Save className="w-4 h-4" />
                   Create Timetable
                 </>
               )}
             </Button>
+            </div>
           </div>
         </Card>
+
+        {/* Community Templates Panel */}
+        {showCommunityPanel && (
+          <Card className="w-1/3 min-h-[600px]">
+            <CommunityTemplates onSelectTemplate={handleTemplateSelect} />
+          </Card>
+        )}
+      </div>
+
+      {/* Dialogs */}
+      <ImageUploadDialog
+        isOpen={showImageUpload}
+        onClose={() => setShowImageUpload(false)}
+        onExtracted={handleImageExtracted}
+      />
+
+      <ShareTemplateDialog
+        isOpen={showShareDialog}
+        onClose={() => {
+          setShowShareDialog(false);
+          window.location.href = '/dashboard';
+        }}
+        timetableData={{ slots }}
+      />
       </div>
     </div>
   );
