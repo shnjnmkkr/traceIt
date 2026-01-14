@@ -141,9 +141,18 @@ export default function AdminTemplatesPage() {
             Back to Dashboard
           </Button>
 
-          <div className="flex items-center gap-3 mb-4">
-            <Shield className="w-6 h-6 text-primary" />
-            <h1 className="text-2xl font-mono font-bold">Admin: Community Templates</h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Shield className="w-6 h-6 text-primary" />
+              <h1 className="text-2xl font-mono font-bold">Admin: Community Templates</h1>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/admin/dashboard')}
+            >
+              View Dashboard
+            </Button>
           </div>
 
           <p className="text-sm text-muted-foreground mb-4">

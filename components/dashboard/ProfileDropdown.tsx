@@ -127,13 +127,13 @@ export function ProfileDropdown() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      router.push('/admin/templates');
+                      router.push('/admin/dashboard');
                       setIsOpen(false);
                     }}
                     className="w-full justify-start gap-3 h-9 px-3 text-primary hover:text-primary hover:bg-primary/10 mb-2"
                   >
                     <Shield className="w-4 h-4" />
-                    <span className="text-sm">Admin Panel</span>
+                    <span className="text-sm">Admin Dashboard</span>
                   </Button>
                 )}
                 <Button
