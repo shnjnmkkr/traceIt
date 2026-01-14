@@ -33,7 +33,6 @@ export function AttendanceWrapped({
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isCapturing, setIsCapturing] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const summaryCardRef = useRef<HTMLDivElement>(null);
   
   // Get display name (use name if available, otherwise email, otherwise "Student")
   const displayName = userName || userEmail?.split('@')[0] || 'Student';
@@ -404,62 +403,21 @@ export function AttendanceWrapped({
   ];
 
   const handleDownload = async () => {
-    if (!summaryCardRef.current) return;
+    if (!cardRef.current) return;
 
     try {
       setIsCapturing(true);
       
-      // Make the static card visible and positioned properly for capture
-      const card = summaryCardRef.current;
-      const originalStyle = {
-        position: card.style.position,
-        left: card.style.left,
-        top: card.style.top,
-        visibility: card.style.visibility,
-        opacity: card.style.opacity,
-        zIndex: card.style.zIndex,
-      };
+      // Wait a bit for any animations to settle
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Temporarily make it visible and position it on-screen
-      card.style.position = 'fixed';
-      card.style.left = '50%';
-      card.style.top = '50%';
-      card.style.transform = 'translate(-50%, -50%)';
-      card.style.visibility = 'visible';
-      card.style.opacity = '1';
-      card.style.zIndex = '9999';
-      card.style.width = '400px';
-      card.style.height = 'auto';
-
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 200));
-      await new Promise(resolve => requestAnimationFrame(resolve));
-
-      const canvas = await html2canvas(card, {
-        backgroundColor: '#0f172a',
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        onclone: (clonedDoc) => {
-          const clonedCard = clonedDoc.querySelector(`[data-static-card]`) as HTMLElement;
-          if (clonedCard) {
-            clonedCard.style.visibility = 'visible';
-            clonedCard.style.opacity = '1';
-          }
-        },
       });
-
-      // Restore original styles
-      card.style.position = originalStyle.position;
-      card.style.left = originalStyle.left;
-      card.style.top = originalStyle.top;
-      card.style.visibility = originalStyle.visibility;
-      card.style.opacity = originalStyle.opacity;
-      card.style.zIndex = originalStyle.zIndex;
-      card.style.transform = '';
-      card.style.width = '';
-      card.style.height = '';
 
       const link = document.createElement("a");
       link.download = `traceIt-${displayName}-attendance-${new Date().getFullYear()}.png`;
@@ -474,62 +432,21 @@ export function AttendanceWrapped({
   };
 
   const handleShare = async () => {
-    if (!summaryCardRef.current) return;
+    if (!cardRef.current) return;
 
     try {
       setIsCapturing(true);
       
-      // Make the static card visible and positioned properly for capture
-      const card = summaryCardRef.current;
-      const originalStyle = {
-        position: card.style.position,
-        left: card.style.left,
-        top: card.style.top,
-        visibility: card.style.visibility,
-        opacity: card.style.opacity,
-        zIndex: card.style.zIndex,
-      };
+      // Wait a bit for any animations to settle
+      await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Temporarily make it visible and position it on-screen
-      card.style.position = 'fixed';
-      card.style.left = '50%';
-      card.style.top = '50%';
-      card.style.transform = 'translate(-50%, -50%)';
-      card.style.visibility = 'visible';
-      card.style.opacity = '1';
-      card.style.zIndex = '9999';
-      card.style.width = '400px';
-      card.style.height = 'auto';
-
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 200));
-      await new Promise(resolve => requestAnimationFrame(resolve));
-
-      const canvas = await html2canvas(card, {
-        backgroundColor: '#0f172a',
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        onclone: (clonedDoc) => {
-          const clonedCard = clonedDoc.querySelector(`[data-static-card]`) as HTMLElement;
-          if (clonedCard) {
-            clonedCard.style.visibility = 'visible';
-            clonedCard.style.opacity = '1';
-          }
-        },
       });
-
-      // Restore original styles
-      card.style.position = originalStyle.position;
-      card.style.left = originalStyle.left;
-      card.style.top = originalStyle.top;
-      card.style.visibility = originalStyle.visibility;
-      card.style.opacity = originalStyle.opacity;
-      card.style.zIndex = originalStyle.zIndex;
-      card.style.transform = '';
-      card.style.width = '';
-      card.style.height = '';
 
       canvas.toBlob(async (blob) => {
         setIsCapturing(false);
@@ -552,13 +469,11 @@ export function AttendanceWrapped({
             text: shareText,
           });
         } else if (navigator.share) {
-          // Share without image if files not supported
           await navigator.share({
             title: `${displayName}'s Attendance Stats`,
             text: shareText,
           });
         } else {
-          // Fallback to download
           handleDownload();
         }
       }, 'image/png', 1.0);
@@ -577,94 +492,10 @@ export function AttendanceWrapped({
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
-  // Static pre-rendered summary card (no animations, always ready for capture)
-  const StaticSummaryCard = () => (
-    <div
-      ref={summaryCardRef}
-      data-static-card
-      className="aspect-[9/16] w-full rounded-2xl overflow-hidden shadow-2xl relative bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900"
-      style={{ position: 'absolute', left: '-9999px', top: '-9999px', visibility: 'hidden', opacity: '0' }}
-    >
-      <div className="flex flex-col items-center justify-center h-full text-white px-6 py-6">
-        <div className="text-center mb-4">
-          <p className="text-sm font-semibold mb-2 text-white/90">
-            {displayName}'s
-          </p>
-          <h2 className="text-2xl font-bold">{new Date().getFullYear()} Summary</h2>
-          <p className="text-xs opacity-70 mt-1">{semesterName}</p>
-          <p className="text-[10px] opacity-50 mt-0.5">
-            {new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-          </p>
-        </div>
-        
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 w-full max-w-sm">
-          {/* Overall */}
-          <div className="text-center mb-4 pb-4 border-b border-white/20">
-            <p className="text-xs opacity-70 mb-1">Overall Attendance</p>
-            <p className="text-5xl font-black mb-1">{overallPercentage}%</p>
-            <p className="text-[10px] opacity-60">{totalAttended} of {totalClasses} classes</p>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="text-center bg-white/5 rounded-lg p-2">
-              <p className="text-xl font-bold text-green-300">{totalAttended}</p>
-              <p className="text-[10px] opacity-70">Attended</p>
-            </div>
-            <div className="text-center bg-white/5 rounded-lg p-2">
-              <p className="text-xl font-bold text-red-300">{totalBunked}</p>
-              <p className="text-[10px] opacity-70">Bunked</p>
-            </div>
-            <div className="text-center bg-white/5 rounded-lg p-2">
-              <p className="text-xl font-bold text-purple-300">{subjects.length}</p>
-              <p className="text-[10px] opacity-70">Subjects</p>
-            </div>
-          </div>
-
-          {/* Performance Indicators */}
-          <div className="space-y-2 mb-4 pb-4 border-b border-white/20">
-            <div className="bg-white/5 rounded-lg p-2">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] opacity-70">Best Performance</span>
-                <span className="text-xs font-semibold text-green-300">{bestSubject.percentage}%</span>
-              </div>
-              <p className="text-xs font-medium truncate">{bestSubject.name}</p>
-            </div>
-            <div className="bg-white/5 rounded-lg p-2">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-[10px] opacity-70">Needs Attention</span>
-                <span className="text-xs font-semibold text-orange-300">{worstSubject.percentage}%</span>
-              </div>
-              <p className="text-xs font-medium truncate">{worstSubject.name}</p>
-            </div>
-          </div>
-
-          {/* Additional Stats */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="text-center bg-white/5 rounded-lg p-2">
-              <p className="text-lg font-bold">{Math.round((totalAttended/totalClasses) * 100)}%</p>
-              <p className="text-[10px] opacity-70">Attendance Rate</p>
-            </div>
-            <div className="text-center bg-white/5 rounded-lg p-2">
-              <p className="text-lg font-bold">{totalClasses - totalAttended}</p>
-              <p className="text-[10px] opacity-70">Classes Missed</p>
-            </div>
-          </div>
-        </div>
-
-        <p className="text-[10px] mt-4 text-center opacity-50">
-          Tracked with traceIt
-        </p>
-      </div>
-    </div>
-  );
-
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Static pre-rendered card (hidden, always ready for capture) */}
-      <StaticSummaryCard />
       
       <motion.div
         initial={{ opacity: 0 }}
@@ -702,17 +533,19 @@ export function AttendanceWrapped({
             </motion.div>
           </AnimatePresence>
 
-          {/* Progress Dots */}
-          <div className="progress-dots absolute bottom-6 left-0 right-0 flex justify-center gap-2">
-            {slides.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-2 rounded-full transition-all ${
-                  idx === currentSlide ? "w-8 bg-white" : "w-2 bg-white/40"
-                }`}
-              />
-            ))}
-          </div>
+          {/* Progress Dots - hide during capture */}
+          {!isCapturing && (
+            <div className="progress-dots absolute bottom-6 left-0 right-0 flex justify-center gap-2">
+              {slides.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-2 rounded-full transition-all ${
+                    idx === currentSlide ? "w-8 bg-white" : "w-2 bg-white/40"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Navigation */}
