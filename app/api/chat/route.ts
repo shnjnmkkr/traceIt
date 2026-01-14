@@ -266,6 +266,73 @@ export async function POST(request: Request) {
       const currentPercentage = parseFloat(stats.overall.toString());
       const percentageFromTarget = currentPercentage - settings.targetPercentage;
       
+      // Daily schedule breakdown for next 7 days
+      const getDailySchedule = (startDate: Date, days: number) => {
+        const dailySchedules: any[] = [];
+        for (let i = 0; i < days; i++) {
+          const date = addDays(startDate, i);
+          if (date > semesterEnd) break;
+          
+          const dayOfWeek = getDay(date) === 0 ? 6 : getDay(date) - 1;
+          if (dayOfWeek >= 5) continue; // Skip weekends
+          
+          const dateStr = format(date, "yyyy-MM-dd");
+          const isPastDate = date < today;
+          const isToday = format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
+          
+          const daySlots = slots.filter(s => s.day === dayOfWeek);
+          const dayClasses: any[] = [];
+          
+          daySlots.forEach(slot => {
+            const slotType = slot.type || 'lecture';
+            const weight = slotType === "lab" ? 1 : (slot.rowSpan || 1);
+            
+            // Check if class has occurred
+            let hasClassOccurred = isPastDate;
+            let attendanceStatus = null;
+            if (isToday) {
+              const [slotHour, slotMinute] = slot.startTime.split(':').map(Number);
+              const classStartTime = new Date(today);
+              classStartTime.setHours(slotHour, slotMinute, 0, 0);
+              hasClassOccurred = classStartTime < today;
+            }
+            
+            if (hasClassOccurred) {
+              const recordKey = `${dateStr}-${slot.id}`;
+              attendanceStatus = attendanceMap.get(recordKey) || "absent";
+            }
+            
+            dayClasses.push({
+              subject: slot.subjectName,
+              code: slot.subject,
+              time: `${slot.startTime} - ${slot.endTime}`,
+              type: slotType,
+              room: slot.room || 'Not specified',
+              instructor: slot.instructor || 'Not specified',
+              duration: weight,
+              status: attendanceStatus, // "attended", "absent", "bunk", "teacher_absent", "holiday", or null if upcoming
+            });
+          });
+          
+          if (dayClasses.length > 0) {
+            dailySchedules.push({
+              date: dateStr,
+              dayName: format(date, 'EEEE'),
+              dateFormatted: format(date, 'MMM dd, yyyy'),
+              isToday: isToday,
+              isPast: isPastDate,
+              classes: dayClasses,
+              totalClasses: dayClasses.reduce((sum, c) => sum + c.duration, 0),
+            });
+          }
+        }
+        return dailySchedules;
+      };
+      
+      const todaySchedule = getDailySchedule(today, 1);
+      const tomorrowSchedule = getDailySchedule(addDays(today, 1), 1);
+      const upcomingSchedule = getDailySchedule(today, 7); // Next 7 days
+      
       return {
         overall: {
           attended: totalAttended,
@@ -298,6 +365,11 @@ export async function POST(request: Request) {
           currentPace: Math.round(currentPace * 10000) / 100,
           projectedAttended: Math.round(projectedAttended),
           projectedPercentage: projectedPercentage,
+        },
+        schedule: {
+          today: todaySchedule.length > 0 ? todaySchedule[0] : null,
+          tomorrow: tomorrowSchedule.length > 0 ? tomorrowSchedule[0] : null,
+          upcoming: upcomingSchedule, // Next 7 days including today
         },
       };
     };
@@ -473,6 +545,26 @@ FOR CURRENT WEEK (overallStats.currentWeek):
 - startDate = week start date
 - endDate = week end date
 
+FOR DAILY SCHEDULE (overallStats.schedule):
+- today = today's schedule with classes, times, rooms, instructors, and attendance status
+  - date = date string (yyyy-MM-dd)
+  - dayName = day of week (e.g., "Wednesday")
+  - dateFormatted = formatted date (e.g., "Jan 14, 2026")
+  - isToday = true if this is today
+  - isPast = true if date has passed
+  - classes = array of classes for this day, each with:
+    - subject = subject name
+    - code = subject code
+    - time = time range (e.g., "09:00 - 10:00")
+    - type = "lab" or "lecture"
+    - room = room number
+    - instructor = instructor name
+    - duration = number of class hours (1 for lab, rowSpan for lecture)
+    - status = attendance status: "attended", "absent", "bunk", "teacher_absent", "holiday", or null if upcoming
+  - totalClasses = total class hours for the day
+- tomorrow = tomorrow's schedule (same structure as today)
+- upcoming = array of next 7 days' schedules (including today)
+
 FOR PROJECTIONS (overallStats.projections):
 - avgClassesPerWeek = average classes per week in semester
 - currentPace = current attendance rate (0-100%)
@@ -491,6 +583,9 @@ IMPORTANT:
 - Always clarify: "totalSoFar" means classes occurred so far, "totalInSemester" means total in entire semester
 - Use overallStats for questions about overall attendance, semester progress, or projections
 - Use currentWeek for questions about this week's classes
+- Use schedule.today for questions about today's classes
+- Use schedule.tomorrow for questions about tomorrow's classes
+- Use schedule.upcoming for questions about upcoming classes or weekly schedule
 
 GOOD RESPONSE EXAMPLES:
 • "For ASM: You've attended 4 out of 7 classes so far (57%), with 56 classes remaining this semester. To meet your 75% target, you need to attend at least 47 classes total. You can miss 13 more classes this semester."
@@ -499,6 +594,9 @@ GOOD RESPONSE EXAMPLES:
 • "This week: You have 8 classes scheduled from Mon to Fri. You can miss 1 class this week if needed."
 • "Progress: You're 30% through the semester with 10 weeks remaining. At your current pace of 49%, you're projected to finish at 49% - you need to improve to reach your 75% target."
 • "You're currently 26 percentage points below your 75% target. You need to attend 26 more classes to catch up."
+• "Today (Wednesday, Jan 14): You have 3 classes - ASM at 09:00, CS at 11:00, and PPE at 14:00. You've attended ASM and CS, but missed PPE."
+• "Tomorrow: You have 2 classes - PTD at 10:00 and LIC at 13:00, both in Room 201."
+• "Upcoming this week: Monday has 4 classes, Tuesday has 3, Wednesday (today) has 3, Thursday has 2, and Friday has 1 class."
 
 BAD RESPONSE EXAMPLES (DON'T DO THIS):
 • "You can miss as many lab sessions as you want" (WRONG - labs count towards attendance)
