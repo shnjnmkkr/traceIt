@@ -309,11 +309,19 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
-      // Wait for any rendering to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Ensure we're on the summary slide
+      if (currentSlide !== slides.length - 1) {
+        setCurrentSlide(slides.length - 1);
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
       
-      // Force a reflow to ensure everything is rendered
-      cardRef.current.offsetHeight;
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Force a reflow
+      if (cardRef.current) {
+        cardRef.current.offsetHeight;
+      }
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#1a1a1a',
@@ -321,15 +329,21 @@ export function AttendanceWrapped({
         logging: false,
         useCORS: true,
         allowTaint: true,
-        windowWidth: cardRef.current.scrollWidth,
-        windowHeight: cardRef.current.scrollHeight,
         onclone: (clonedDoc) => {
-          // Ensure all elements are visible in the clone
+          // Fix the absolute positioned slide
           const clonedCard = clonedDoc.querySelector('[data-card-ref]') as HTMLElement;
           if (clonedCard) {
-            clonedCard.style.opacity = '1';
-            clonedCard.style.transform = 'none';
-            clonedCard.style.visibility = 'visible';
+            const motionDiv = clonedCard.querySelector('div[style*="position"]') as HTMLElement;
+            if (motionDiv) {
+              motionDiv.style.position = 'absolute';
+              motionDiv.style.top = '0';
+              motionDiv.style.left = '0';
+              motionDiv.style.right = '0';
+              motionDiv.style.bottom = '0';
+              motionDiv.style.transform = 'none';
+              motionDiv.style.opacity = '1';
+              motionDiv.style.visibility = 'visible';
+            }
           }
         },
       });
@@ -352,11 +366,19 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
-      // Wait for any rendering to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Ensure we're on the summary slide
+      if (currentSlide !== slides.length - 1) {
+        setCurrentSlide(slides.length - 1);
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
       
-      // Force a reflow to ensure everything is rendered
-      cardRef.current.offsetHeight;
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Force a reflow
+      if (cardRef.current) {
+        cardRef.current.offsetHeight;
+      }
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#1a1a1a',
@@ -364,15 +386,21 @@ export function AttendanceWrapped({
         logging: false,
         useCORS: true,
         allowTaint: true,
-        windowWidth: cardRef.current.scrollWidth,
-        windowHeight: cardRef.current.scrollHeight,
         onclone: (clonedDoc) => {
-          // Ensure all elements are visible in the clone
+          // Fix the absolute positioned slide
           const clonedCard = clonedDoc.querySelector('[data-card-ref]') as HTMLElement;
           if (clonedCard) {
-            clonedCard.style.opacity = '1';
-            clonedCard.style.transform = 'none';
-            clonedCard.style.visibility = 'visible';
+            const motionDiv = clonedCard.querySelector('div[style*="position"]') as HTMLElement;
+            if (motionDiv) {
+              motionDiv.style.position = 'absolute';
+              motionDiv.style.top = '0';
+              motionDiv.style.left = '0';
+              motionDiv.style.right = '0';
+              motionDiv.style.bottom = '0';
+              motionDiv.style.transform = 'none';
+              motionDiv.style.opacity = '1';
+              motionDiv.style.visibility = 'visible';
+            }
           }
         },
       });
@@ -454,15 +482,17 @@ export function AttendanceWrapped({
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={currentSlide}
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+              initial={isCapturing ? false : { opacity: 0, x: 100 }}
+              animate={isCapturing ? { opacity: 1, x: 0 } : { opacity: 1, x: 0 }}
+              exit={isCapturing ? false : { opacity: 0, x: -100 }}
+              transition={isCapturing ? { duration: 0 } : { duration: 0.3, ease: "easeInOut" }}
               className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].gradient}`}
-              style={{ 
-                willChange: 'transform, opacity',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
               }}
             >
               <div className="h-full w-full overflow-hidden">
