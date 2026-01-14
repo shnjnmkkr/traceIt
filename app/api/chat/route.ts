@@ -119,11 +119,13 @@ export async function POST(request: Request) {
       countMassBunkAs: settingsData.count_mass_bunk_as,
       countTeacherAbsentAs: settingsData.count_teacher_absent_as,
       showAnalytics: settingsData.show_analytics,
+      includeLabsInOverall: settingsData.include_labs_in_overall !== false, // Default to true
     } : {
       targetPercentage: 75,
       countMassBunkAs: 'absent',
       countTeacherAbsentAs: 'attended',
       showAnalytics: true,
+      includeLabsInOverall: true,
     };
 
     // 5. Calculate current attendance stats
