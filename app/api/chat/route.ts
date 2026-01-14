@@ -187,7 +187,7 @@ export async function POST(request: Request) {
     const semesterTotals = calculateTotalSemesterClasses();
 
     // 5b. Calculate overall semester statistics and additional metrics
-    const calculateOverallStats = () => {
+    const calculateOverallStats = (attendanceMap: Map<string, string>, slots: any[]) => {
       // Overall totals
       let totalAttended = 0;
       let totalSoFar = 0;
@@ -218,16 +218,38 @@ export async function POST(request: Request) {
       const weekEndDate = weekEnd < semesterEnd ? weekEnd : semesterEnd;
       
       let weekClasses = 0;
+      let weekAttended = 0;
       const weekDates = eachDayOfInterval({ start: weekStart, end: weekEndDate });
       weekDates.forEach(date => {
         const dayOfWeek = getDay(date) === 0 ? 6 : getDay(date) - 1;
         if (dayOfWeek >= 5) return; // Skip weekends
+        
+        const dateStr = format(date, "yyyy-MM-dd");
+        const isPastDate = date < today;
+        const isToday = format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
         
         const daySlots = slots.filter(s => s.day === dayOfWeek);
         daySlots.forEach(slot => {
           const slotType = slot.type || 'lecture';
           const weight = slotType === "lab" ? 1 : (slot.rowSpan || 1);
           weekClasses += weight;
+          
+          // Check if class has occurred and was attended
+          let hasClassOccurred = isPastDate;
+          if (isToday) {
+            const [slotHour, slotMinute] = slot.startTime.split(':').map(Number);
+            const classStartTime = new Date(today);
+            classStartTime.setHours(slotHour, slotMinute, 0, 0);
+            hasClassOccurred = classStartTime < today;
+          }
+          
+          if (hasClassOccurred) {
+            const recordKey = `${dateStr}-${slot.id}`;
+            const status = attendanceMap.get(recordKey);
+            if (status === "attended" || (status === "bunk" && settings.countMassBunkAs === "attended") || (status === "teacher_absent" && settings.countTeacherAbsentAs === "attended")) {
+              weekAttended += weight;
+            }
+          }
         });
       });
       
@@ -265,7 +287,9 @@ export async function POST(request: Request) {
           progressPercentage: progressPercentage,
         },
         currentWeek: {
-          classes: weekClasses,
+          classes: weekClasses, // Total classes scheduled this week
+          attended: weekAttended, // Classes attended this week
+          remaining: Math.max(0, weekClasses - weekAttended), // Classes remaining this week
           startDate: format(weekStart, 'MMM dd'),
           endDate: format(weekEndDate, 'MMM dd, yyyy'),
         },
@@ -278,7 +302,7 @@ export async function POST(request: Request) {
       };
     };
 
-    const overallStats = calculateOverallStats();
+    const overallStats = calculateOverallStats(attendanceMap, slots);
 
     // 6. Format schedule for LLM (clearly distinguish labs and lectures)
     const schedule = slots.map(slot => ({
@@ -380,6 +404,7 @@ export async function POST(request: Request) {
         targetPercentage: settings.targetPercentage, // Number, not string, for calculations
         massBunkCounting: settings.countMassBunkAs,
         teacherAbsentCounting: settings.countTeacherAbsentAs,
+        includeLabsInOverall: settings.includeLabsInOverall, // Whether labs are included in overall attendance
       },
     };
 
@@ -443,6 +468,8 @@ FOR TIME INFORMATION (overallStats.time):
 
 FOR CURRENT WEEK (overallStats.currentWeek):
 - classes = number of classes scheduled this week
+- attended = classes attended this week (so far)
+- remaining = classes remaining this week (not yet occurred or not attended)
 - startDate = week start date
 - endDate = week end date
 
@@ -451,6 +478,12 @@ FOR PROJECTIONS (overallStats.projections):
 - currentPace = current attendance rate (0-100%)
 - projectedAttended = projected total classes attended if maintaining current pace
 - projectedPercentage = projected attendance percentage if maintaining current pace
+
+FOR SETTINGS (settings):
+- targetPercentage = target attendance percentage (e.g., 75)
+- massBunkCounting = how mass bunks are counted ("attended", "absent", or "exclude")
+- teacherAbsentCounting = how teacher absences are counted ("attended", "absent", or "exclude")
+- includeLabsInOverall = whether labs are included in overall attendance calculation (true/false)
 
 IMPORTANT: 
 - Labs count towards attendance targets too! Never say "you can miss as many labs as you want"
