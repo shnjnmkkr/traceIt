@@ -48,6 +48,7 @@ export default function DashboardPage() {
   
   // Data State
   const [timetable, setTimetable] = useState<Timetable | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [settings, setSettings] = useState<UserSettings>({
     targetPercentage: 75,
     countMassBunkAs: "absent",
@@ -63,10 +64,15 @@ export default function DashboardPage() {
         setLoading(true);
         
         // Check if user is authenticated
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (!session) {
           router.push('/auth/login');
           return;
+        }
+        
+        // Get user email
+        if (session.user?.email) {
+          setUserEmail(session.user.email);
         }
         
         // Fetch timetable
@@ -830,6 +836,7 @@ export default function DashboardPage() {
           semesterName={timetable.name || "Current Semester"}
           startDate={timetable.startDate}
           endDate={timetable.endDate}
+          userEmail={userEmail || undefined}
         />
       )}
     </div>

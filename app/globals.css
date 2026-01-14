@@ -49,6 +49,14 @@
   50% { opacity: 0; }
 }
 
+/* Disable animations when capturing for PNG export */
+.capturing *,
+.capturing *::before,
+.capturing *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 .cursor-blink {
   animation: cursor-blink 1s infinite;
 }
