@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Trash2, Calendar, MapPin, User, Check, Edit2, Save } from "lucide-react";
+import { X, Trash2, Calendar, MapPin, User, Check, Edit2, Save, CheckCircle2 } from "lucide-react";
 import { TimetableSlot } from "@/types";
 import { getStatusColor, getStatusLabel } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -240,19 +240,21 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                         </motion.button>
                       );
                     })}
+                    
+                    {/* Clear/Unmark button - only show if there's a marked status, positioned to the right of Holiday */}
+                    {(currentStatus !== "upcoming" && currentStatus !== "unmarked") && (
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => onStatusChange("clear")}
+                        className="p-3 rounded-lg border-2 border-dashed border-muted-foreground/50 text-muted-foreground hover:bg-muted hover:border-muted-foreground transition-all text-sm font-medium min-h-[44px] flex items-center justify-center"
+                      >
+                        <span className="font-semibold text-center leading-tight">
+                          Clear / Unmark
+                        </span>
+                      </motion.button>
+                    )}
                   </div>
-                  
-                  {/* Clear/Unmark button - only show if there's a marked status */}
-                  {(currentStatus !== "upcoming" && currentStatus !== "unmarked") && (
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => onStatusChange("clear")}
-                      className="w-full mt-3 p-3 rounded-lg border-2 border-dashed border-muted-foreground/50 text-muted-foreground hover:bg-muted hover:border-muted-foreground transition-all text-sm font-medium"
-                    >
-                      Clear / Unmark
-                    </motion.button>
-                  )}
                 </div>
 
                 {/* Actions */}
@@ -280,11 +282,12 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                   ) : (
                     <>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         onClick={onClose}
-                        className="flex-1"
+                        className="text-green-600 border-green-600 hover:bg-green-600/10 flex-1"
                       >
-                        Close
+                        <CheckCircle2 className="w-4 h-4 mr-2" />
+                        Done
                       </Button>
                       <Button
                         variant="outline"
