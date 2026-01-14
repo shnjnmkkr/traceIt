@@ -156,12 +156,33 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, name } = body;
+    const { id, name, startDate, endDate } = body;
+
+    // Build update object
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (startDate !== undefined) updateData.start_date = startDate;
+    if (endDate !== undefined) updateData.end_date = endDate;
+
+    // Get timetable ID if not provided
+    let timetableId = id;
+    if (!timetableId) {
+      const { data: timetable } = await supabase
+        .from('timetables')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (!timetable) {
+        return NextResponse.json({ error: 'Timetable not found' }, { status: 404 });
+      }
+      timetableId = timetable.id;
+    }
 
     const { error } = await supabase
       .from('timetables')
-      .update({ name })
-      .eq('id', id)
+      .update(updateData)
+      .eq('id', timetableId)
       .eq('user_id', user.id);
 
     if (error) throw error;

@@ -37,7 +37,7 @@ export default function CreateTimetablePage() {
   const [name, setName] = useState("Even Semester 2026");
   const [semester, setSemester] = useState("Even Semester 2026");
   const [section, setSection] = useState("");
-  const [startDate, setStartDate] = useState("2026-01-01");
+  const [startDate, setStartDate] = useState("2026-01-05");
   const [endDate, setEndDate] = useState("2026-04-22");
 
   // Slots

@@ -513,7 +513,11 @@ export default function DashboardPage() {
           <div className="border-t border-border" />
 
           {/* Semester Info */}
-          <SemesterInfo startDate={semesterStart} endDate={semesterEnd} />
+          <SemesterInfo 
+            startDate={semesterStart} 
+            endDate={semesterEnd}
+            onDatesChange={handleDatesChange}
+          />
 
           {/* Divider */}
           <div className="border-t border-border" />
@@ -800,7 +804,11 @@ export default function DashboardPage() {
                 <div className="border-t border-border" />
 
                 {/* Semester Info */}
-                <SemesterInfo startDate={semesterStart} endDate={semesterEnd} />
+                <SemesterInfo 
+                  startDate={semesterStart} 
+                  endDate={semesterEnd}
+                  onDatesChange={handleDatesChange}
+                />
 
                 <div className="border-t border-border" />
 

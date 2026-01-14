@@ -1,15 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Calendar, Clock, TrendingUp } from "lucide-react";
+import { Calendar, Clock, TrendingUp, Edit2, Save, X } from "lucide-react";
 import { differenceInDays, format, differenceInWeeks } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 interface SemesterInfoProps {
   startDate: Date;
   endDate: Date;
+  onDatesChange?: (startDate: string, endDate: string) => void;
 }
 
-export function SemesterInfo({ startDate, endDate }: SemesterInfoProps) {
+export function SemesterInfo({ startDate, endDate, onDatesChange }: SemesterInfoProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedStartDate, setEditedStartDate] = useState(format(startDate, "yyyy-MM-dd"));
+  const [editedEndDate, setEditedEndDate] = useState(format(endDate, "yyyy-MM-dd"));
+  const [isSaving, setIsSaving] = useState(false);
+
   const today = new Date();
   const totalDays = differenceInDays(endDate, startDate);
   const daysElapsed = Math.max(0, differenceInDays(today, startDate));
@@ -17,29 +25,110 @@ export function SemesterInfo({ startDate, endDate }: SemesterInfoProps) {
   const progress = Math.min(100, Math.max(0, (daysElapsed / totalDays) * 100));
   const weeksRemaining = Math.max(0, Math.ceil(differenceInWeeks(endDate, today)));
 
+  const handleSave = async () => {
+    if (!onDatesChange) return;
+    
+    setIsSaving(true);
+    try {
+      await onDatesChange(editedStartDate, editedEndDate);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating dates:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditedStartDate(format(startDate, "yyyy-MM-dd"));
+    setEditedEndDate(format(endDate, "yyyy-MM-dd"));
+    setIsEditing(false);
+  };
+
   return (
     <Card className="p-4 space-y-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Calendar className="w-4 h-4 text-primary" />
-        <h3 className="text-sm font-mono font-semibold uppercase">
-          Semester Timeline
-        </h3>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-mono font-semibold uppercase">
+            Semester Timeline
+          </h3>
+        </div>
+        {onDatesChange && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => isEditing ? handleCancel() : setIsEditing(true)}
+            className="h-6 px-2 text-xs"
+          >
+            {isEditing ? (
+              <X className="w-3 h-3" />
+            ) : (
+              <Edit2 className="w-3 h-3" />
+            )}
+          </Button>
+        )}
       </div>
 
       {/* Date Range */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <span className="text-xs font-mono text-muted-foreground uppercase">Start</span>
-          <span className="text-xs font-mono font-semibold">
-            {format(startDate, "dd MMM yyyy")}
-          </span>
+          {isEditing ? (
+            <input
+              type="date"
+              value={editedStartDate}
+              onChange={(e) => setEditedStartDate(e.target.value)}
+              className="text-xs font-mono font-semibold bg-background border border-border rounded px-2 py-1"
+            />
+          ) : (
+            <span className="text-xs font-mono font-semibold">
+              {format(startDate, "dd MMM yyyy")}
+            </span>
+          )}
         </div>
         <div className="flex justify-between items-center">
           <span className="text-xs font-mono text-muted-foreground uppercase">End</span>
-          <span className="text-xs font-mono font-semibold">
-            {format(endDate, "dd MMM yyyy")}
-          </span>
+          {isEditing ? (
+            <input
+              type="date"
+              value={editedEndDate}
+              onChange={(e) => setEditedEndDate(e.target.value)}
+              className="text-xs font-mono font-semibold bg-background border border-border rounded px-2 py-1"
+            />
+          ) : (
+            <span className="text-xs font-mono font-semibold">
+              {format(endDate, "dd MMM yyyy")}
+            </span>
+          )}
         </div>
+        {isEditing && (
+          <div className="flex gap-2 pt-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleCancel}
+              className="flex-1 text-xs h-7"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex-1 text-xs h-7"
+            >
+              {isSaving ? (
+                "Saving..."
+              ) : (
+                <>
+                  <Save className="w-3 h-3 mr-1" />
+                  Save
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Progress Bar */}
