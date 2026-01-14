@@ -228,7 +228,7 @@ export function AttendanceWrapped({
     {
       gradient: "from-slate-900 via-purple-900 to-slate-900",
       content: (
-        <div className="flex flex-col items-center justify-center h-full text-white px-6 py-6">
+        <div className="flex flex-col items-center justify-center h-full w-full text-white px-6 py-6 overflow-hidden">
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
