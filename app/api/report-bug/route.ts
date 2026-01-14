@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { createClient } from '@/lib/supabase/server';
 import { rateLimit, RATE_LIMITS, getIdentifier } from '@/lib/rate-limiter';
 
 export async function POST(request: Request) {
@@ -17,13 +16,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const supabase = await createClient();
+    
+    // Get user if logged in
+    const { data: { user } } = await supabase.auth.getUser();
+
     const formData = await request.formData();
     
     const type = formData.get('type') as string;
     const title = formData.get('title') as string;
     const description = formData.get('description') as string;
     const category = formData.get('category') as string;
-    const email = formData.get('email') as string;
+    const email = formData.get('email') as string | null;
     const deviceInfo = formData.get('deviceInfo') as string;
     const screenshot = formData.get('screenshot') as File | null;
     
@@ -49,45 +53,67 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create report object
-    const report: any = {
-      type: type || 'bug',
-      timestamp: new Date().toISOString(),
-      title,
-      category,
-      description,
-      userEmail: email,
-      deviceInfo,
-      screenshot: screenshot ? screenshot.name : null,
-    };
-
-    if (type === 'bug') {
-      report.severity = severity;
-      report.expectedBehavior = expectedBehavior;
-      report.actualBehavior = actualBehavior;
-      report.stepsToReproduce = stepsToReproduce;
-    }
-
-
-    // If screenshot exists, save it (optional - for development)
+    // Upload screenshot to Supabase Storage if provided
+    let screenshotUrl: string | null = null;
     if (screenshot) {
       try {
         const bytes = await screenshot.arrayBuffer();
         const buffer = Buffer.from(bytes);
+        const filename = `${Date.now()}-${screenshot.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
         
-        // Save to public/bug-reports folder (create it if needed)
-        const filename = `${Date.now()}-${screenshot.name}`;
-        const path = join(process.cwd(), 'public', 'bug-reports', filename);
-        
-        // Note: You'll need to create the public/bug-reports directory manually
-        await writeFile(path, buffer);
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('bug-reports')
+          .upload(filename, buffer, {
+            contentType: screenshot.type,
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error('Error uploading screenshot:', uploadError);
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('bug-reports')
+            .getPublicUrl(filename);
+          screenshotUrl = publicUrl;
+        }
       } catch (error) {
-        console.error('Error saving screenshot:', error);
-        // Continue even if screenshot save fails
+        console.error('Error processing screenshot:', error);
+        // Continue without screenshot
       }
     }
 
-    // TODO: Configure email service to receive reports
+    // Save to database
+    const reportData: any = {
+      type: type || 'bug',
+      title,
+      description,
+      category,
+      user_email: email || null,
+      device_info: deviceInfo,
+      screenshot_url: screenshotUrl,
+      user_id: user?.id || null,
+    };
+
+    if (type === 'bug') {
+      reportData.severity = severity;
+      reportData.expected_behavior = expectedBehavior;
+      reportData.actual_behavior = actualBehavior;
+      reportData.steps_to_reproduce = stepsToReproduce;
+    }
+
+    const { data: report, error: dbError } = await supabase
+      .from('bug_reports')
+      .insert(reportData)
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Error saving bug report:', dbError);
+      return NextResponse.json(
+        { error: 'Failed to save report' },
+        { status: 500 }
+      );
+    }
     // 
     // OPTION 1: Resend (Recommended - Free tier available)
     // 1. Sign up at https://resend.com
@@ -147,7 +173,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `${type === 'bug' ? 'Bug report' : 'Feature suggestion'} submitted successfully` 
+      message: `${type === 'bug' ? 'Bug report' : 'Feature suggestion'} submitted successfully`,
+      reportId: report.id
     });
   } catch (error: any) {
     console.error('Error processing report:', error);

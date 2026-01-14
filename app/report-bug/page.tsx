@@ -350,19 +350,18 @@ export default function ReportBugPage() {
                   {/* Email */}
                   <div>
                     <label className="block text-sm font-mono font-semibold mb-2">
-                      Your Email <span className="text-red-500">*</span>
+                      Your Email (Optional)
                     </label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="your.email@example.com"
-                      required
                       className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
                     />
                     <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                       <Info className="w-3 h-3" />
-                      We'll use this to follow up on your submission
+                      Optional - We'll use this to follow up on your submission if provided
                     </p>
                   </div>
 

@@ -13,7 +13,8 @@ import {
   ArrowLeft,
   RefreshCw,
   BarChart3,
-  Clock
+  Clock,
+  Bug
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -182,6 +183,14 @@ export default function AdminDashboardPage() {
                 onClick={() => router.push('/admin/templates')}
               >
                 Manage Templates
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/admin/bug-reports')}
+              >
+                <Bug className="w-4 h-4 mr-2" />
+                Bug Reports
               </Button>
               <Button
                 variant="outline"
