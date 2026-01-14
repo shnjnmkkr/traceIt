@@ -228,12 +228,12 @@ export function AttendanceWrapped({
     {
       gradient: "from-slate-900 via-purple-900 to-slate-900",
       content: (
-        <div className="flex flex-col items-center justify-center h-full w-full text-white px-6 py-6 overflow-hidden">
+        <div className="flex flex-col h-full w-full text-white px-6 py-6 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-center mb-4"
+            className="text-center mb-4 flex-shrink-0"
           >
             <motion.p
               initial={{ opacity: 0, scale: 0.8 }}
@@ -250,12 +250,12 @@ export function AttendanceWrapped({
             </p>
           </motion.div>
           
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={isCapturing ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
-                transition={isCapturing ? { duration: 0 } : { delay: 0.3 }}
-                className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 w-full max-w-sm mx-auto"
-              >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={isCapturing ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.3 }}
+            className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 w-full flex-shrink-0"
+          >
             {/* Overall */}
             <div className="text-center mb-4 pb-4 border-b border-white/20">
               <p className="text-xs opacity-70 mb-1">Overall Attendance</p>
@@ -349,7 +349,7 @@ export function AttendanceWrapped({
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
             transition={{ delay: 1.2 }}
-            className="text-[10px] mt-4 text-center"
+            className="text-[10px] mt-4 text-center flex-shrink-0"
           >
             Tracked with traceIt
           </motion.p>
