@@ -38,7 +38,7 @@ export function WeeklyTrendChart({ data, target }: WeeklyTrendChartProps) {
                 borderRadius: '8px',
                 color: '#fafafa'
               }}
-              formatter={(value: number) => [`${value}%`, 'Attendance']}
+              formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Attendance']}
               labelFormatter={(label) => new Date(label).toLocaleDateString()}
             />
             <ReferenceLine 
