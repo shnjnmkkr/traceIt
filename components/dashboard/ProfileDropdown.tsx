@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, User, LogOut, ChevronDown, RefreshCw, Trash2, AlertTriangle } from "lucide-react";
+import { Settings, User, LogOut, ChevronDown, RefreshCw, Trash2, AlertTriangle, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
@@ -15,15 +15,22 @@ export function ProfileDropdown() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [userEmail, setUserEmail] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Get user email
-  useState(() => {
+  // Get user email and admin status
+  useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setUserEmail(data.user.email || "");
       }
     });
-  });
+
+    // Check admin status
+    fetch('/api/admin/check')
+      .then(res => res.json())
+      .then(data => setIsAdmin(data.isAdmin || false))
+      .catch(() => setIsAdmin(false));
+  }, [supabase]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -115,6 +122,20 @@ export function ProfileDropdown() {
 
               {/* Menu Items */}
               <div className="p-2">
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      router.push('/admin/templates');
+                      setIsOpen(false);
+                    }}
+                    className="w-full justify-start gap-3 h-9 px-3 text-primary hover:text-primary hover:bg-primary/10 mb-2"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="text-sm">Admin Panel</span>
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
