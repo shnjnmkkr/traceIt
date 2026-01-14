@@ -405,13 +405,18 @@ export default function CreateTimetablePage() {
                                 autoFocus
                                 className="w-full bg-background rounded px-2 py-1 text-xs border border-border"
                               />
-                              <input
-                                type="text"
-                                value={slot.subject}
-                                onChange={(e) => updateSlot(slot.id, { subject: e.target.value })}
-                                placeholder="Code"
-                                className="w-full bg-background rounded px-2 py-1 text-xs font-mono font-bold border border-border"
-                              />
+                              <div>
+                                <input
+                                  type="text"
+                                  value={slot.subject}
+                                  onChange={(e) => updateSlot(slot.id, { subject: e.target.value })}
+                                  placeholder="Code"
+                                  className="w-full bg-background rounded px-2 py-1 text-xs font-mono font-bold border border-border"
+                                />
+                                <p className="text-[9px] text-muted-foreground mt-0.5 opacity-70 leading-tight">
+                                  ⚠️ Same code for lab & lecture. Case matters (EE202 ≠ ee202).
+                                </p>
+                              </div>
                               <div className="flex gap-1 mt-1">
                                 <button
                                   onClick={(e) => {

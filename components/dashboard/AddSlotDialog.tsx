@@ -107,6 +107,9 @@ export function AddSlotDialog({ day, startTime, endTime, isOpen, onClose, onSave
                       placeholder="Code"
                       className="w-full bg-background rounded px-3 py-2 text-sm font-mono font-bold border border-border focus:border-primary focus:outline-none"
                     />
+                    <p className="text-[10px] text-muted-foreground mt-1.5 opacity-70">
+                      ⚠️ Use the same code for lab & lecture of the same subject. Be careful with case (e.g., "EE202" ≠ "ee202").
+                    </p>
                   </div>
 
                   <div>

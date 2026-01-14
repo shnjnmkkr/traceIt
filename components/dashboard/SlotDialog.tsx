@@ -113,13 +113,18 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                             placeholder="Subject"
                             className="w-full bg-background rounded px-3 py-2 text-sm border border-border"
                           />
-                          <input
-                            type="text"
-                            value={editedSlot?.subject || ''}
-                            onChange={(e) => setEditedSlot(prev => prev ? { ...prev, subject: e.target.value } : null)}
-                            placeholder="Code"
-                            className="w-full bg-background rounded px-3 py-2 text-sm font-mono font-bold border border-border"
-                          />
+                          <div>
+                            <input
+                              type="text"
+                              value={editedSlot?.subject || ''}
+                              onChange={(e) => setEditedSlot(prev => prev ? { ...prev, subject: e.target.value } : null)}
+                              placeholder="Code"
+                              className="w-full bg-background rounded px-3 py-2 text-sm font-mono font-bold border border-border"
+                            />
+                            <p className="text-[10px] text-muted-foreground mt-1.5 opacity-70">
+                              ⚠️ Use the same code for lab & lecture of the same subject. Be careful with case (e.g., "EE202" ≠ "ee202").
+                            </p>
+                          </div>
                         </div>
                       ) : (
                         <>
