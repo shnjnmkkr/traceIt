@@ -14,13 +14,18 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const sortBy = searchParams.get('sortBy') || 'usage'; // 'usage', 'votes', 'newest'
 
-    // Get current user for vote status
+    // Get current user for vote status and admin check
     const { data: { user } } = await supabase.auth.getUser();
+    const userIsAdmin = user ? await isAdmin(user.id) : false;
 
     let query = supabase
       .from('community_templates')
-      .select('*')
-      .eq('is_public', true);
+      .select('*');
+    
+    // Non-admins can only see public templates
+    if (!userIsAdmin) {
+      query = query.eq('is_public', true);
+    }
 
     if (university) {
       query = query.ilike('university', `%${university}%`);

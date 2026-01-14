@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Shield, Trash2, Search, Users, TrendingUp, ChevronUp, ChevronDown, ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Shield, Trash2, Search, Users, TrendingUp, ChevronUp, ChevronDown, ArrowLeft, Eye, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import { TimetableSlot } from "@/types";
 
 interface CommunityTemplate {
   id: string;
@@ -21,6 +22,9 @@ interface CommunityTemplate {
   upvotes: number;
   downvotes: number;
   created_at: string;
+  template_data?: {
+    slots?: TimetableSlot[];
+  };
 }
 
 export default function AdminTemplatesPage() {
@@ -32,6 +36,7 @@ export default function AdminTemplatesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<'newest' | 'usage' | 'votes'>('newest');
+  const [viewingTemplate, setViewingTemplate] = useState<CommunityTemplate | null>(null);
 
   useEffect(() => {
     checkAdminAndFetch();
@@ -223,16 +228,27 @@ export default function AdminTemplatesPage() {
                 <Card className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <h3 className="font-mono font-semibold text-sm flex-1">{template.name}</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDelete(template.id, template.name)}
-                      disabled={deletingTemplateId === template.id}
-                      title="Delete template"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={() => setViewingTemplate(template)}
+                        title="View template content"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(template.id, template.name)}
+                        disabled={deletingTemplateId === template.id}
+                        title="Delete template"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
 
                   {template.description && (
@@ -291,6 +307,113 @@ export default function AdminTemplatesPage() {
           </div>
         )}
       </div>
+
+      {/* View Template Content Modal */}
+      <AnimatePresence>
+        {viewingTemplate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-background border border-border rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <div>
+                  <h2 className="text-xl font-mono font-bold">{viewingTemplate.name}</h2>
+                  {viewingTemplate.description && (
+                    <p className="text-sm text-muted-foreground mt-1">{viewingTemplate.description}</p>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => setViewingTemplate(null)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {viewingTemplate.template_data?.slots && viewingTemplate.template_data.slots.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground mb-4">
+                      Total Slots: {viewingTemplate.template_data.slots.length}
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm border-collapse">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="text-left p-2 font-mono font-semibold">Day</th>
+                            <th className="text-left p-2 font-mono font-semibold">Time</th>
+                            <th className="text-left p-2 font-mono font-semibold">Subject Code</th>
+                            <th className="text-left p-2 font-mono font-semibold">Subject Name</th>
+                            <th className="text-left p-2 font-mono font-semibold">Type</th>
+                            <th className="text-left p-2 font-mono font-semibold">Room</th>
+                            <th className="text-left p-2 font-mono font-semibold">Instructor</th>
+                            <th className="text-left p-2 font-mono font-semibold">Duration</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {viewingTemplate.template_data.slots
+                            .sort((a, b) => {
+                              // Sort by day, then by start time
+                              if (a.day !== b.day) return a.day - b.day;
+                              return a.startTime.localeCompare(b.startTime);
+                            })
+                            .map((slot, idx) => (
+                              <tr key={idx} className="border-b border-border/50 hover:bg-muted/50">
+                                <td className="p-2">
+                                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'][slot.day]}
+                                </td>
+                                <td className="p-2 font-mono">
+                                  {slot.startTime} - {slot.endTime}
+                                </td>
+                                <td className="p-2 font-mono">{slot.subject || '-'}</td>
+                                <td className="p-2">{slot.subjectName || '-'}</td>
+                                <td className="p-2">
+                                  <span className={`px-2 py-0.5 rounded text-xs ${
+                                    slot.type === 'lab' 
+                                      ? 'bg-purple-500/20 text-purple-300' 
+                                      : 'bg-blue-500/20 text-blue-300'
+                                  }`}>
+                                    {slot.type === 'lab' ? 'Lab' : 'Lecture'}
+                                  </span>
+                                </td>
+                                <td className="p-2 text-muted-foreground">{slot.room || '-'}</td>
+                                <td className="p-2 text-muted-foreground">{slot.instructor || '-'}</td>
+                                <td className="p-2 text-muted-foreground">
+                                  {slot.rowSpan ? `${slot.rowSpan} hour${slot.rowSpan > 1 ? 's' : ''}` : '1 hour'}
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground py-12">
+                    No timetable slots found in this template.
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex items-center justify-end gap-2 p-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  onClick={() => setViewingTemplate(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
