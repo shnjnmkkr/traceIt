@@ -43,6 +43,7 @@ export const defaultSettings: UserSettings = {
   countMassBunkAs: "absent",
   countTeacherAbsentAs: "attended",
   showAnalytics: true,
+  includeLabsInOverall: true,
 };
 
 // Mock attendance records (key: "date-slotId", value: status)
