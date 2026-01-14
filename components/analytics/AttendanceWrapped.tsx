@@ -356,50 +356,6 @@ export function AttendanceWrapped({
         </div>
       ),
     },
-    {
-      gradient: "from-gray-900 via-gray-800 to-black",
-      content: (
-        <div className="flex flex-col items-center justify-center h-full text-white px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-center"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.4, type: "spring" }}
-              className="mb-8"
-            >
-              <Share2 className="w-20 h-20 mx-auto mb-6" />
-            </motion.div>
-            <h2 className="text-4xl font-bold mb-4">Share Your Stats</h2>
-            <p className="text-lg mb-8 opacity-80">
-              Ready to share your attendance journey?
-            </p>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="bg-white/5 rounded-lg p-6 mb-8"
-            >
-              <p className="text-sm opacity-70 mb-2">Your shareable card will include:</p>
-              <ul className="text-sm space-y-1 opacity-90">
-                <li>Overall attendance percentage</li>
-                <li>Classes attended & bunked</li>
-                <li>Best & subjects needing attention</li>
-                <li>Link to traceIt</li>
-              </ul>
-            </motion.div>
-            <div className="text-xs opacity-50">
-              <p>Powered by traceIt</p>
-              <p className="mt-1">Made by SM</p>
-            </div>
-          </motion.div>
-        </div>
-      ),
-    },
   ];
 
   const handleDownload = async () => {
@@ -408,12 +364,8 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
-      // Navigate to summary card (2nd last slide)
-      const summarySlideIndex = slides.length - 2;
-      setCurrentSlide(summarySlideIndex);
-      
-      // Wait for slide transition and animations to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for animations to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
@@ -441,12 +393,8 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
-      // Navigate to summary card (2nd last slide)
-      const summarySlideIndex = slides.length - 2;
-      setCurrentSlide(summarySlideIndex);
-      
-      // Wait for slide transition and animations to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait for animations to complete
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
