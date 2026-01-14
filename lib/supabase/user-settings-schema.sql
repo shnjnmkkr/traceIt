@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS user_settings (
   target_percentage DECIMAL(5,2) DEFAULT 75.00,
   count_mass_bunk_as TEXT DEFAULT 'absent' CHECK (count_mass_bunk_as IN ('attended', 'absent', 'exclude')),
   count_teacher_absent_as TEXT DEFAULT 'attended' CHECK (count_teacher_absent_as IN ('attended', 'absent', 'exclude')),
-  show_analytics BOOLEAN DEFAULT TRUE
+  show_analytics BOOLEAN DEFAULT TRUE,
+  include_labs_in_overall BOOLEAN DEFAULT TRUE
 );
 
 -- Index for quick lookups

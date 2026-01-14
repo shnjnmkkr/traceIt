@@ -632,6 +632,11 @@ export default function DashboardPage() {
                 target={settings.targetPercentage}
                 subjects={analytics.subjects}
                 weeklyTrend={[]}
+                includeLabsInOverall={settings.includeLabsInOverall !== false}
+                onToggleLabs={async (include) => {
+                  const newSettings = { ...settings, includeLabsInOverall: include };
+                  await handleSettingsChange(newSettings);
+                }}
               />
             </div>
           )}

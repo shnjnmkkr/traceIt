@@ -27,20 +27,22 @@ export async function GET() {
             countMassBunkAs: 'absent',
             countTeacherAbsentAs: 'attended',
             showAnalytics: true,
+            includeLabsInOverall: true,
           },
         });
       }
       throw settingsError;
     }
 
-    return NextResponse.json({
-      settings: {
-        targetPercentage: parseFloat(settings.target_percentage),
-        countMassBunkAs: settings.count_mass_bunk_as,
-        countTeacherAbsentAs: settings.count_teacher_absent_as,
-        showAnalytics: settings.show_analytics,
-      },
-    });
+      return NextResponse.json({
+        settings: {
+          targetPercentage: parseFloat(settings.target_percentage),
+          countMassBunkAs: settings.count_mass_bunk_as,
+          countTeacherAbsentAs: settings.count_teacher_absent_as,
+          showAnalytics: settings.show_analytics,
+          includeLabsInOverall: settings.include_labs_in_overall !== false, // Default to true
+        },
+      });
   } catch (error: any) {
     console.error('Error fetching settings:', error);
     return NextResponse.json(
@@ -62,7 +64,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { targetPercentage, countMassBunkAs, countTeacherAbsentAs, showAnalytics } = body;
+    const { targetPercentage, countMassBunkAs, countTeacherAbsentAs, showAnalytics, includeLabsInOverall } = body;
 
     // Upsert settings
     const { error } = await supabase
@@ -73,6 +75,7 @@ export async function PUT(request: Request) {
         count_mass_bunk_as: countMassBunkAs,
         count_teacher_absent_as: countTeacherAbsentAs,
         show_analytics: showAnalytics,
+        include_labs_in_overall: includeLabsInOverall !== undefined ? includeLabsInOverall : true,
       }, {
         onConflict: 'user_id',
       });

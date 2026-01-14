@@ -200,8 +200,29 @@ export function calculateAttendanceStats(
     return subject;
   });
 
-  const totalAttended = subjects.reduce((sum, s) => sum + s.attended, 0);
-  const totalClasses = subjects.reduce((sum, s) => sum + s.total, 0);
+  // Calculate overall attendance
+  // If includeLabsInOverall is false, exclude lab sessions from overall calculation
+  let totalAttended = 0;
+  let totalClasses = 0;
+
+  if (settings.includeLabsInOverall !== false) {
+    // Include everything (default behavior)
+    totalAttended = subjects.reduce((sum, s) => sum + s.attended, 0);
+    totalClasses = subjects.reduce((sum, s) => sum + s.total, 0);
+  } else {
+    // Exclude labs - only count lectures
+    subjects.forEach(s => {
+      if (s.lecture) {
+        totalAttended += s.lecture.attended;
+        totalClasses += s.lecture.total;
+      } else if (!s.lab) {
+        // Subject has no lab/lecture breakdown, include it (likely lecture-only)
+        totalAttended += s.attended;
+        totalClasses += s.total;
+      }
+    });
+  }
+
   const overall = totalClasses > 0 ? Math.round((totalAttended / totalClasses) * 10000) / 100 : 0;
 
   return { overall, subjects };

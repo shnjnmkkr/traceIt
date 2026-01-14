@@ -11,9 +11,11 @@ interface AnalyticsSectionProps {
   target: number;
   subjects: SubjectAnalytics[];
   weeklyTrend: { date: string; percentage: number }[];
+  includeLabsInOverall: boolean;
+  onToggleLabs: (include: boolean) => void;
 }
 
-export function AnalyticsSection({ overall, target, subjects, weeklyTrend }: AnalyticsSectionProps) {
+export function AnalyticsSection({ overall, target, subjects, weeklyTrend, includeLabsInOverall, onToggleLabs }: AnalyticsSectionProps) {
   // Show empty state if no data
   if (subjects.length === 0) {
     return (
@@ -38,7 +40,12 @@ export function AnalyticsSection({ overall, target, subjects, weeklyTrend }: Ana
       className="space-y-6"
     >
       {/* Overall Progress */}
-      <OverallProgress percentage={overall} target={target} />
+      <OverallProgress 
+        percentage={overall} 
+        target={target} 
+        includeLabsInOverall={includeLabsInOverall}
+        onToggleLabs={onToggleLabs}
+      />
 
       {/* Subject Breakdown */}
       <SubjectBreakdown subjects={subjects} />

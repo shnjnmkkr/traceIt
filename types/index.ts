@@ -66,4 +66,5 @@ export interface UserSettings {
   countMassBunkAs: "attended" | "absent" | "exclude";
   countTeacherAbsentAs: "attended" | "absent" | "exclude";
   showAnalytics: boolean;
+  includeLabsInOverall: boolean;
 }
