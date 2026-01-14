@@ -116,7 +116,7 @@ export default function LoginPage() {
             traceIt<span className="text-primary">.</span>
           </motion.h1>
           <p className="text-muted-foreground text-sm">
-            Track your attendance, master your academics
+            Track your attendance. Simple as that.
           </p>
         </div>
 
