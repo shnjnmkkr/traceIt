@@ -17,10 +17,19 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
+          // Set longer expiration for auth cookies (30 days for persistent sessions)
+          const cookieOptions: CookieOptions = {
+            ...options,
+            maxAge: name.includes('auth-token') || name.includes('sb-') ? 60 * 60 * 24 * 30 : options.maxAge, // 30 days for auth cookies
+            sameSite: 'lax' as const,
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: false, // Allow client-side access for Supabase
+          };
+          
           request.cookies.set({
             name,
             value,
-            ...options,
+            ...cookieOptions,
           })
           response = NextResponse.next({
             request: {
@@ -30,7 +39,7 @@ export async function middleware(request: NextRequest) {
           response.cookies.set({
             name,
             value,
-            ...options,
+            ...cookieOptions,
           })
         },
         remove(name: string, options: CookieOptions) {

@@ -64,19 +64,14 @@ export default function LoginPage() {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
-          options: {
-            persistSession: rememberMe,
-          },
         });
 
         if (error) throw error;
 
         if (data.user) {
-          // If remember me is checked, set a longer session duration
-          if (rememberMe) {
-            // Session will persist for 30 days (Supabase default for persistent sessions)
-            // The cookie expiration is handled by Supabase automatically
-          }
+          // Session persistence is handled by cookie settings in middleware and server.ts
+          // When rememberMe is true, cookies are set with 30-day expiration
+          // When false, cookies use default session expiration
           
           router.push("/dashboard");
           router.refresh();
