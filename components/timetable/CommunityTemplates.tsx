@@ -71,14 +71,49 @@ export function CommunityTemplates({ onSelectTemplate }: CommunityTemplatesProps
 
       const data = await response.json();
       
+      if (!response.ok) {
+        console.error('Vote failed:', data.error);
+        alert(data.error || 'Failed to vote. Please try again.');
+        return;
+      }
+      
       if (data.success) {
-        // Refresh templates to get updated vote counts
-        await fetchTemplates();
+        // Update UI with server response (most accurate)
+        setTemplates(prevTemplates => {
+          return prevTemplates.map(template => {
+            if (template.id === templateId) {
+              const currentVote = template.userVote;
+              let newUserVote: 'upvote' | 'downvote' | null = null;
+
+              // Determine new user vote state
+              if (data.action === 'removed') {
+                newUserVote = null;
+              } else if (data.action === 'updated' || data.action === 'added') {
+                newUserVote = voteType;
+              }
+
+              return {
+                ...template,
+                upvotes: data.upvotes !== undefined ? data.upvotes : template.upvotes || 0,
+                downvotes: data.downvotes !== undefined ? data.downvotes : template.downvotes || 0,
+                userVote: newUserVote,
+              };
+            }
+            return template;
+          });
+        });
+
+        // Refresh from server to ensure accuracy and get user vote status
+        setTimeout(async () => {
+          await fetchTemplates();
+        }, 200);
       } else {
         console.error('Vote failed:', data.error);
+        alert(data.error || 'Failed to vote. Please try again.');
       }
     } catch (error) {
       console.error('Error voting:', error);
+      alert('Failed to vote. Please try again.');
     } finally {
       setVotingTemplateId(null);
     }
@@ -219,14 +254,14 @@ export function CommunityTemplates({ onSelectTemplate }: CommunityTemplatesProps
                       <button
                         onClick={(e) => handleVote(e, template.id, 'upvote')}
                         disabled={votingTemplateId === template.id}
-                        className={`p-1 transition-colors ${
+                        className={`p-1 transition-all ${
                           template.userVote === 'upvote'
                             ? 'bg-primary text-primary-foreground'
                             : 'hover:bg-muted'
                         }`}
                         title="Upvote"
                       >
-                        <ChevronUp className="w-3 h-3" />
+                        <ChevronUp className={`w-3 h-3 ${template.userVote === 'upvote' ? 'text-primary-foreground' : ''}`} />
                       </button>
                       <span className="text-[10px] px-1 min-w-[20px] text-center">
                         {(template.upvotes || 0) - (template.downvotes || 0)}
@@ -234,9 +269,9 @@ export function CommunityTemplates({ onSelectTemplate }: CommunityTemplatesProps
                       <button
                         onClick={(e) => handleVote(e, template.id, 'downvote')}
                         disabled={votingTemplateId === template.id}
-                        className={`p-1 transition-colors ${
+                        className={`p-1 transition-all ${
                           template.userVote === 'downvote'
-                            ? 'bg-destructive text-destructive-foreground'
+                            ? 'bg-red-600 text-white'
                             : 'hover:bg-muted'
                         }`}
                         title="Downvote"

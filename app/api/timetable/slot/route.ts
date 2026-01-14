@@ -70,7 +70,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { slotId, subject, subjectName, room, instructor } = body;
+    const { slotId, subject, subjectName, room, instructor, rowSpan, endTime } = body;
 
     // Verify the slot belongs to the user's timetable
     const { data: slot, error: slotError } = await supabase
@@ -93,15 +93,26 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
+    // Build update object
+    const updateData: any = {
+      subject_code: subject,
+      subject_name: subjectName,
+      room,
+      instructor,
+    };
+
+    // Include rowSpan and endTime if provided (for merging)
+    if (rowSpan !== undefined) {
+      updateData.row_span = rowSpan;
+    }
+    if (endTime !== undefined) {
+      updateData.end_time = endTime;
+    }
+
     // Update the slot
     const { error } = await supabase
       .from('timetable_slots')
-      .update({
-        subject_code: subject,
-        subject_name: subjectName,
-        room,
-        instructor,
-      })
+      .update(updateData)
       .eq('id', slotId);
 
     if (error) throw error;

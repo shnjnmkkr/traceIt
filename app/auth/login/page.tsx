@@ -98,7 +98,7 @@ export default function LoginPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="text-4xl font-bold font-mono mb-2"
           >
-            TraceIt<span className="text-primary">.</span>
+            traceIt<span className="text-primary">.</span>
           </motion.h1>
           <p className="text-muted-foreground text-sm">
             Track your attendance, master your academics

@@ -33,6 +33,9 @@ export default function DashboardPage() {
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isBulkMarkingOpen, setIsBulkMarkingOpen] = useState(false);
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingSlot, setEditingSlot] = useState<string | null>(null);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   
@@ -202,16 +205,24 @@ export default function DashboardPage() {
     
     // Save to database
     try {
+      const updateData: any = {
+        slotId: updatedSlot.id,
+        subject: updatedSlot.subject,
+        subjectName: updatedSlot.subjectName,
+        room: updatedSlot.room,
+        instructor: updatedSlot.instructor,
+      };
+
+      // Include rowSpan and endTime if they exist (for merging)
+      if (updatedSlot.rowSpan !== undefined) {
+        updateData.rowSpan = updatedSlot.rowSpan;
+        updateData.endTime = updatedSlot.endTime;
+      }
+
       await fetch('/api/timetable/slot', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slotId: updatedSlot.id,
-          subject: updatedSlot.subject,
-          subjectName: updatedSlot.subjectName,
-          room: updatedSlot.room,
-          instructor: updatedSlot.instructor,
-        }),
+        body: JSON.stringify(updateData),
       });
     } catch (error) {
       console.error('Error updating slot:', error);
@@ -258,10 +269,81 @@ export default function DashboardPage() {
       if (ttData.timetable) {
         setTimetable(ttData.timetable);
         console.log('✅ Timetable state updated');
+        
+        // If in edit mode, set the newly created slot to editing
+        if (isEditMode && result.slot) {
+          setEditingSlot(result.slot.id);
+        }
       }
     } catch (error) {
       console.error('❌ Error adding slot:', error);
     }
+  };
+
+  const handleSlotMerge = async (slotId: string) => {
+    if (!timetable) return;
+    
+    const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+    const currentSlot = timetable.slots.find(s => s.id === slotId);
+    if (!currentSlot) return;
+
+    const currentTimeIdx = TIME_SLOTS.indexOf(currentSlot.startTime);
+    const nextTimeIdx = currentTimeIdx + (currentSlot.rowSpan || 1);
+    
+    if (nextTimeIdx >= TIME_SLOTS.length) {
+      alert('Cannot merge beyond the last time slot');
+      return;
+    }
+
+    const nextTime = TIME_SLOTS[nextTimeIdx];
+    const nextSlot = timetable.slots.find(s => s.day === currentSlot.day && s.startTime === nextTime);
+    
+    if (nextSlot && (nextSlot.subject || nextSlot.subjectName)) {
+      alert('Cannot merge with a slot that has content');
+      return;
+    }
+
+    try {
+      // Delete next slot if it exists
+      if (nextSlot) {
+        await handleSlotDelete(nextSlot.id);
+        // Wait a bit for delete to complete
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      // Update current slot with new rowSpan
+      const newRowSpan = (currentSlot.rowSpan || 1) + 1;
+      const newEndTimeIdx = currentTimeIdx + newRowSpan;
+      const newEndTime = TIME_SLOTS[newEndTimeIdx] || "18:00";
+
+      await handleSlotEdit({
+        ...currentSlot,
+        rowSpan: newRowSpan,
+        endTime: newEndTime,
+      });
+
+      // Refresh timetable to get updated data
+      const ttResponse = await fetch('/api/timetable');
+      const ttData = await ttResponse.json();
+      if (ttData.timetable) {
+        setTimetable(ttData.timetable);
+      }
+    } catch (error) {
+      console.error('Error merging slot:', error);
+      alert('Failed to merge slots. Please try again.');
+    }
+  };
+
+  const handleSlotUpdateLocal = (slotId: string, updates: Partial<any>) => {
+    if (!timetable) return;
+    
+    setTimetable(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        slots: prev.slots.map(s => s.id === slotId ? { ...s, ...updates } : s)
+      };
+    });
   };
 
   const handleTimetableNameChange = async (newName: string) => {
@@ -463,7 +545,7 @@ export default function DashboardPage() {
                 </Button>
 
                 <h1 className="text-2xl font-bold font-mono tracking-tight">
-                  TraceIt<span className="text-primary">.</span>
+                  traceIt<span className="text-primary">.</span>
                 </h1>
               </div>
 
@@ -524,7 +606,19 @@ export default function DashboardPage() {
               onSlotDelete={handleSlotDelete}
               onSlotEdit={handleSlotEdit}
               onSlotAdd={handleSlotAdd}
+              onSlotMerge={handleSlotMerge}
+              onSlotUpdateLocal={handleSlotUpdateLocal}
               editable={true}
+              isEditMode={isEditMode}
+              editingSlot={editingSlot}
+              selectedSlot={selectedSlotId}
+              onEditingSlotChange={setEditingSlot}
+              onSelectedSlotChange={setSelectedSlotId}
+              onEditModeToggle={() => {
+                setIsEditMode(!isEditMode);
+                setEditingSlot(null);
+                setSelectedSlotId(null);
+              }}
             />
           </motion.div>
 

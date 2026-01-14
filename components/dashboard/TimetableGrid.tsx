@@ -6,14 +6,13 @@ import { TimetableSlot } from "@/types";
 import { getStatusColor, getStatusLabel } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Maximize2 } from "lucide-react";
+import { Plus, Maximize2, Merge, Trash2, Edit2, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SlotDialog } from "./SlotDialog";
 import { AddSlotDialog } from "./AddSlotDialog";
 import { addDays, format, isBefore, startOfDay } from "date-fns";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 
 const STATUS_LEGEND = [
   { key: "attended", label: "Attended" },
@@ -33,16 +32,59 @@ interface TimetableGridProps {
   onSlotDelete?: (slotId: string) => void;
   onSlotEdit?: (slot: TimetableSlot) => void;
   onSlotAdd?: (day: number, startTime: string, endTime: string, subject: string, subjectName: string, type: "lecture" | "lab") => void;
+  onSlotMerge?: (slotId: string) => void;
+  onSlotUpdateLocal?: (slotId: string, updates: Partial<TimetableSlot>) => void;
   editable?: boolean;
+  isEditMode?: boolean;
+  editingSlot?: string | null;
+  selectedSlot?: string | null;
+  onEditingSlotChange?: (slotId: string | null) => void;
+  onSelectedSlotChange?: (slotId: string | null) => void;
+  onEditModeToggle?: () => void;
 }
 
-export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSlotUpdate, onSlotDelete, onSlotEdit, onSlotAdd, editable = true }: TimetableGridProps) {
+const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+
+export function TimetableGrid({ 
+  slots, 
+  attendanceRecords, 
+  currentWeekStart, 
+  onSlotUpdate, 
+  onSlotDelete, 
+  onSlotEdit, 
+  onSlotAdd,
+  onSlotMerge,
+  onSlotUpdateLocal,
+  editable = true,
+  isEditMode = false,
+  editingSlot: externalEditingSlot,
+  selectedSlot: externalSelectedSlot,
+  onEditingSlotChange,
+  onSelectedSlotChange,
+  onEditModeToggle,
+}: TimetableGridProps) {
   const [selectedSlot, setSelectedSlot] = useState<{ slot: TimetableSlot; date: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [slotPosition, setSlotPosition] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [mergingSlots, setMergingSlots] = useState<string[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newSlotData, setNewSlotData] = useState<{ day: number; startTime: string; endTime: string } | null>(null);
+  
+  // Use external state if provided, otherwise use internal state
+  const editingSlot = externalEditingSlot !== undefined ? externalEditingSlot : null;
+  const selectedSlotId = externalSelectedSlot !== undefined ? externalSelectedSlot : null;
+  
+  const setEditingSlot = (slotId: string | null) => {
+    if (onEditingSlotChange) {
+      onEditingSlotChange(slotId);
+    }
+  };
+  
+  const setSelectedSlotId = (slotId: string | null) => {
+    if (onSelectedSlotChange) {
+      onSelectedSlotChange(slotId);
+    }
+  };
 
   // Debug: Log when slots change
   useEffect(() => {
@@ -61,6 +103,55 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
       console.log(`✅ Found slot at day=${day}, time=${time}:`, found);
     }
     return found;
+  };
+
+  // Helper functions for edit mode
+  const getSlotAtCell = (day: number, time: string) => {
+    return slots.find(s => s.day === day && s.startTime === time);
+  };
+
+  const isCellCovered = (day: number, timeIdx: number): boolean => {
+    const time = TIME_SLOTS[timeIdx];
+    return slots.some(slot => {
+      if (slot.day !== day) return false;
+      const slotStartIdx = TIME_SLOTS.indexOf(slot.startTime);
+      if (slotStartIdx === -1) return false;
+      const slotEndIdx = slotStartIdx + (slot.rowSpan || 1);
+      return timeIdx > slotStartIdx && timeIdx < slotEndIdx;
+    });
+  };
+
+  const handleCellClickEditMode = (day: number, timeIndex: number) => {
+    if (!isEditMode) return;
+    
+    const time = TIME_SLOTS[timeIndex];
+    const existing = getSlotAtCell(day, time);
+    
+    if (existing) {
+      if (editingSlot === existing.id) {
+        if (existing.subject || existing.subjectName) {
+          setEditingSlot(null);
+          setSelectedSlotId(existing.id);
+        } else {
+          // Empty slot - remove it
+          if (onSlotDelete) {
+            onSlotDelete(existing.id);
+          }
+          setEditingSlot(null);
+        }
+      } else if (selectedSlotId === existing.id) {
+        setEditingSlot(existing.id);
+        setSelectedSlotId(null);
+      } else {
+        setEditingSlot(existing.id);
+        setSelectedSlotId(null);
+      }
+    } else {
+      // Empty cell - open add dialog
+      const nextTime = TIME_SLOTS[timeIndex + 1] || "18:00";
+      setNewSlotData({ day, startTime: time, endTime: nextTime });
+      setIsAddDialogOpen(true);
+    }
   };
 
   // Get the date for a specific day of the current week
@@ -123,10 +214,10 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
   return (
     <>
       <Card className="overflow-hidden">
-        {/* Header with legend and merge controls */}
+        {/* Header with legend and edit button */}
         <div className="px-6 pt-6 pb-4 border-b border-border bg-card">
           <div className="flex items-center justify-between gap-4">
-            {/* Legend - full width */}
+            {/* Legend */}
             <div className="flex items-center gap-4 flex-1 overflow-x-auto">
               {STATUS_LEGEND.map((status, idx) => (
                 <motion.div
@@ -150,18 +241,26 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
               ))}
             </div>
 
-            {/* Far Right: Merge controls if active */}
-            {mergingSlots.length > 0 && (
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge variant="outline">{mergingSlots.length} selected</Badge>
-                <Button size="sm" variant="outline" onClick={() => setMergingSlots([])}>
-                  Cancel
-                </Button>
-                <Button size="sm" disabled={mergingSlots.length < 2}>
-                  <Maximize2 className="w-3 h-3 mr-1" />
-                  Merge
-                </Button>
-              </div>
+            {/* Edit Mode Toggle Button */}
+            {onEditModeToggle && (
+              <Button
+                variant={isEditMode ? "default" : "outline"}
+                size="sm"
+                onClick={onEditModeToggle}
+                className="gap-2 flex-shrink-0"
+              >
+                {isEditMode ? (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Exit Edit
+                  </>
+                ) : (
+                  <>
+                    <Edit2 className="w-4 h-4" />
+                    Edit
+                  </>
+                )}
+              </Button>
             )}
           </div>
         </div>
@@ -192,13 +291,15 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
                 
                 {TIME_SLOTS.map((time, timeIdx) => {
                   // Check if this cell is covered by a merged cell
-                  const isCovered = TIME_SLOTS.some((t, idx) => {
-                    if (idx >= timeIdx) return false;
-                    const s = getSlotForCell(dayIdx, t);
-                    if (!s || !s.rowSpan) return false;
-                    const slotEndIdx = idx + s.rowSpan;
-                    return timeIdx < slotEndIdx;
-                  });
+                  const isCovered = isEditMode 
+                    ? isCellCovered(dayIdx, timeIdx)
+                    : TIME_SLOTS.some((t, idx) => {
+                        if (idx >= timeIdx) return false;
+                        const s = getSlotForCell(dayIdx, t);
+                        if (!s || !s.rowSpan) return false;
+                        const slotEndIdx = idx + s.rowSpan;
+                        return timeIdx < slotEndIdx;
+                      });
                   
                   if (isCovered) {
                     return null;
@@ -207,9 +308,22 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
                   const slot = getSlotForCell(dayIdx, time);
                   const date = getDateForDay(dayIdx);
                   
-                  const isSlotSelected = false; // No selection in dashboard view
+                  const isSlotSelected = isEditMode ? selectedSlotId === slot?.id : false;
+                  const isSlotEditing = isEditMode ? editingSlot === slot?.id : false;
                   const gridColumnStart = timeIdx + 2;
                   const gridColumnEnd = slot?.rowSpan ? gridColumnStart + slot.rowSpan : gridColumnStart + 1;
+                  
+                  // Check if merge is possible
+                  let canMergeRight = false;
+                  if ((isSlotSelected || isSlotEditing) && slot) {
+                    const nextTimeIdx = timeIdx + (slot.rowSpan || 1);
+                    if (nextTimeIdx < TIME_SLOTS.length) {
+                      const nextTime = TIME_SLOTS[nextTimeIdx];
+                      const nextSlot = getSlotAtCell(dayIdx, nextTime);
+                      // Can merge if next slot doesn't exist or is empty
+                      canMergeRight = !nextSlot || (!nextSlot.subject && !nextSlot.subjectName);
+                    }
+                  }
 
                   if (!slot) {
                     const nextTime = TIME_SLOTS[timeIdx + 1] || "18:00";
@@ -218,7 +332,9 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
                       <div
                         key={`${dayIdx}-${time}`}
                         onClick={() => {
-                          if (editable && onSlotAdd) {
+                          if (isEditMode) {
+                            handleCellClickEditMode(dayIdx, timeIdx);
+                          } else if (editable && onSlotAdd) {
                             setNewSlotData({ day: dayIdx, startTime: time, endTime: nextTime });
                             setIsAddDialogOpen(true);
                           }
@@ -237,43 +353,173 @@ export function TimetableGrid({ slots, attendanceRecords, currentWeekStart, onSl
                   return (
                     <div
                       key={`${slot.id}-${date}`}
-                      onClick={(e) => handleSlotClick(slot, date, e)}
-                      className={`min-h-[70px] border-2 rounded-md p-3 cursor-pointer transition-all relative ${
-                        isMerging ? 'ring-2 ring-warning shadow-lg' : ''
-                      }`}
+                      onClick={(e) => {
+                        if (isEditMode) {
+                          handleCellClickEditMode(dayIdx, timeIdx);
+                        } else {
+                          handleSlotClick(slot, date, e);
+                        }
+                      }}
+                      className={`min-h-[110px] border-2 rounded-md p-3 cursor-pointer transition-all relative ${
+                        isEditMode && isSlotSelected
+                          ? 'border-warning bg-warning/10 shadow-lg'
+                          : isEditMode && isSlotEditing
+                          ? 'border-primary bg-primary/10'
+                          : slot && (slot.subject || slot.subjectName)
+                          ? 'border-primary bg-primary/5 hover:bg-primary/10'
+                          : 'border-dashed border-border hover:border-primary/50 hover:bg-muted/50'
+                      } ${isMerging ? 'ring-2 ring-warning shadow-lg' : ''}`}
                       style={{
                         gridColumnStart,
                         gridColumnEnd,
-                        backgroundColor: `${slot.color || getStatusColor(status)}08`,
-                        borderColor: slot.color || getStatusColor(status),
+                        backgroundColor: isEditMode ? undefined : `${slot.color || getStatusColor(status)}08`,
+                        borderColor: isEditMode ? undefined : (slot.color || getStatusColor(status)),
                       }}
                     >
-                      <div className="h-full flex flex-col">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="text-sm font-mono font-bold text-primary leading-tight">
-                            {slot.subject}
+                      {isEditMode && isSlotEditing ? (
+                        <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={slot.subjectName || ''}
+                            onChange={(e) => {
+                              if (onSlotUpdateLocal) {
+                                onSlotUpdateLocal(slot.id, { subjectName: e.target.value });
+                              }
+                            }}
+                            onBlur={() => {
+                              if (onSlotEdit && (slot.subject || slot.subjectName)) {
+                                onSlotEdit(slot);
+                              }
+                            }}
+                            placeholder="Subject Name"
+                            autoFocus
+                            className="w-full bg-background rounded px-2 py-1 text-xs border border-border"
+                          />
+                          <input
+                            type="text"
+                            value={slot.subject || ''}
+                            onChange={(e) => {
+                              if (onSlotUpdateLocal) {
+                                onSlotUpdateLocal(slot.id, { subject: e.target.value });
+                              }
+                            }}
+                            onBlur={() => {
+                              if (onSlotEdit && (slot.subject || slot.subjectName)) {
+                                onSlotEdit(slot);
+                              }
+                            }}
+                            placeholder="Code"
+                            className="w-full bg-background rounded px-2 py-1 text-xs font-mono font-bold border border-border"
+                          />
+                          <div className="flex gap-1 mt-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onSlotUpdateLocal) {
+                                  onSlotUpdateLocal(slot.id, { type: "lecture" });
+                                }
+                                if (onSlotEdit) {
+                                  onSlotEdit({ ...slot, type: "lecture" });
+                                }
+                              }}
+                              className={`flex-1 px-2 py-1 text-xs rounded border transition-all ${
+                                (slot.type === "lecture" || !slot.type)
+                                  ? 'bg-primary text-primary-foreground border-primary'
+                                  : 'bg-background border-border text-muted-foreground hover:border-primary'
+                              }`}
+                            >
+                              Lecture
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onSlotUpdateLocal) {
+                                  onSlotUpdateLocal(slot.id, { type: "lab" });
+                                }
+                                if (onSlotEdit) {
+                                  onSlotEdit({ ...slot, type: "lab" });
+                                }
+                              }}
+                              className={`flex-1 px-2 py-1 text-xs rounded border transition-all ${
+                                slot.type === "lab"
+                                  ? 'bg-primary text-primary-foreground border-primary'
+                                  : 'bg-background border-border text-muted-foreground hover:border-primary'
+                              }`}
+                            >
+                              Lab
+                            </button>
                           </div>
-                          {slot.type === "lab" && (
-                            <div className="text-xs px-1.5 py-0.5 bg-primary/20 text-primary rounded font-mono font-bold">
-                              LAB
+                          <div className="flex gap-1 mt-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onSlotEdit && (slot.subject || slot.subjectName)) {
+                                  onSlotEdit(slot);
+                                }
+                                setEditingSlot(null);
+                              }}
+                              className="px-2 py-1 text-xs rounded border border-primary bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-1"
+                              title="Done editing"
+                            >
+                              <Check className="w-3 h-3" />
+                            </button>
+                            {canMergeRight && onSlotMerge && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onSlotMerge(slot.id);
+                                  setEditingSlot(null);
+                                }}
+                                className="flex-1 px-2 py-1 text-xs rounded border border-primary text-primary hover:bg-primary/10 flex items-center justify-center gap-1"
+                              >
+                                <Merge className="w-3 h-3" />
+                                Merge
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onSlotDelete) {
+                                  onSlotDelete(slot.id);
+                                }
+                                setEditingSlot(null);
+                              }}
+                              className="px-2 py-1 text-xs rounded border border-destructive text-destructive hover:bg-destructive/10 flex items-center justify-center gap-1"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="h-full flex flex-col">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="text-sm font-mono font-bold text-primary leading-tight">
+                              {slot.subject}
                             </div>
+                            {slot.type === "lab" && (
+                              <div className="text-xs px-1.5 py-0.5 bg-primary/20 text-primary rounded font-mono font-bold">
+                                LAB
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
+                            {slot.subjectName}
+                          </div>
+                          
+                          {!isEditMode && (
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs w-fit mt-auto"
+                              style={{
+                                borderColor: getStatusColor(status),
+                                color: getStatusColor(status),
+                              }}
+                            >
+                              {getStatusLabel(status)}
+                            </Badge>
                           )}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
-                          {slot.subjectName}
-                        </div>
-                        
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs w-fit mt-auto"
-                          style={{
-                            borderColor: getStatusColor(status),
-                            color: getStatusColor(status),
-                          }}
-                        >
-                          {getStatusLabel(status)}
-                        </Badge>
-                      </div>
+                      )}
                     </div>
                   );
                 })}

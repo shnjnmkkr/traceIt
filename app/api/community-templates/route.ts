@@ -30,13 +30,14 @@ export async function GET(request: Request) {
       query = query.ilike('course', `%${course}%`);
     }
 
-    // Sort by different criteria
-    if (sortBy === 'votes') {
-      query = query.order('upvotes', { ascending: false });
-    } else if (sortBy === 'newest') {
+    // Sort by different criteria (votes will be sorted in JavaScript after fetch)
+    if (sortBy === 'newest') {
       query = query.order('created_at', { ascending: false });
-    } else {
+    } else if (sortBy === 'usage') {
       query = query.order('usage_count', { ascending: false });
+    } else {
+      // For votes, we'll sort by net votes in JavaScript
+      query = query.order('created_at', { ascending: false }); // Default order
     }
 
     query = query.limit(limit);
@@ -45,10 +46,20 @@ export async function GET(request: Request) {
 
     if (error) throw error;
 
+    // Sort by net votes if needed (since we can't do computed columns in Supabase query)
+    let sortedTemplates = templates || [];
+    if (sortBy === 'votes') {
+      sortedTemplates = [...sortedTemplates].sort((a, b) => {
+        const netA = (a.upvotes || 0) - (a.downvotes || 0);
+        const netB = (b.upvotes || 0) - (b.downvotes || 0);
+        return netB - netA; // Descending order
+      });
+    }
+
     // Fetch user's votes for each template if authenticated
     let userVotes: Record<string, string> = {};
     if (user) {
-      const templateIds = (templates || []).map(t => t.id);
+      const templateIds = (sortedTemplates || []).map(t => t.id);
       if (templateIds.length > 0) {
         const { data: votes } = await supabase
           .from('community_template_votes')
@@ -65,9 +76,11 @@ export async function GET(request: Request) {
     }
 
     // Add user vote status to each template
-    const templatesWithVotes = (templates || []).map(template => ({
+    const templatesWithVotes = (sortedTemplates || []).map(template => ({
       ...template,
       userVote: userVotes[template.id] || null,
+      upvotes: template.upvotes || 0,
+      downvotes: template.downvotes || 0,
     }));
 
     return NextResponse.json({ templates: templatesWithVotes });

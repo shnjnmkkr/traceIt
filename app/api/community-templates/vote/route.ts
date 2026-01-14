@@ -64,7 +64,19 @@ export async function POST(request: Request) {
 
         if (deleteError) throw deleteError;
 
-        return NextResponse.json({ success: true, action: 'removed' });
+        // Fetch updated vote counts
+        const { data: template } = await supabase
+          .from('community_templates')
+          .select('upvotes, downvotes')
+          .eq('id', templateId)
+          .single();
+
+        return NextResponse.json({ 
+          success: true, 
+          action: 'removed',
+          upvotes: template?.upvotes || 0,
+          downvotes: template?.downvotes || 0,
+        });
       } else {
         // Different vote type - update to new vote
         const { error: updateError } = await supabase
@@ -74,7 +86,19 @@ export async function POST(request: Request) {
 
         if (updateError) throw updateError;
 
-        return NextResponse.json({ success: true, action: 'updated' });
+        // Fetch updated vote counts
+        const { data: template } = await supabase
+          .from('community_templates')
+          .select('upvotes, downvotes')
+          .eq('id', templateId)
+          .single();
+
+        return NextResponse.json({ 
+          success: true, 
+          action: 'updated',
+          upvotes: template?.upvotes || 0,
+          downvotes: template?.downvotes || 0,
+        });
       }
     } else {
       // New vote
@@ -88,7 +112,19 @@ export async function POST(request: Request) {
 
       if (insertError) throw insertError;
 
-      return NextResponse.json({ success: true, action: 'added' });
+      // Fetch updated vote counts
+      const { data: template } = await supabase
+        .from('community_templates')
+        .select('upvotes, downvotes')
+        .eq('id', templateId)
+        .single();
+
+      return NextResponse.json({ 
+        success: true, 
+        action: 'added',
+        upvotes: template?.upvotes || 0,
+        downvotes: template?.downvotes || 0,
+      });
     }
   } catch (error: any) {
     console.error('Error voting on template:', error);

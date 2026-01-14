@@ -14,7 +14,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TraceIt - Smart Attendance Tracker",
+  title: "traceIt - Smart Attendance Tracker",
   description: "Track, analyze, and optimize your attendance with AI-powered insights",
   viewport: {
     width: "device-width",

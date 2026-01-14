@@ -80,7 +80,7 @@ export function ResizableAIPanel({ onClose }: ResizableAIPanelProps) {
       </div>
 
       {/* Chat panel */}
-      <div className="flex-1 overflow-hidden pt-2">
+      <div className="flex-1 overflow-hidden">
         <AIChatPanel />
       </div>
     </motion.aside>

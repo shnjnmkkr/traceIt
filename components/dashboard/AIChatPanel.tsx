@@ -23,8 +23,9 @@ export function AIChatPanel() {
 
   const quickQuestions = [
     "Show my attendance summary",
+    "How many more classes can I miss per subject?",
+    "Which subjects need more attention?",
     "What's my schedule today?",
-    "Which subjects need focus?",
     "Help me plan my week",
   ];
 
@@ -119,7 +120,7 @@ export function AIChatPanel() {
 
   return (
     <Card className="flex flex-col h-full border-0 shadow-none overflow-hidden">
-      <CardHeader className="flex-shrink-0 border-b border-border pb-3 pr-12">
+      <CardHeader className="flex-shrink-0 border-b border-border pb-3 pr-12 pt-3 px-4">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
           <h2 className="font-mono font-semibold text-sm uppercase tracking-wider">AI Advisor</h2>

@@ -300,7 +300,7 @@ export function AttendanceWrapped({
                 className="bg-white/5 rounded-lg p-2"
               >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="text-[10px] opacity-70">Needs Focus</span>
+                  <span className="text-[10px] opacity-70">Needs Attention</span>
                   <span className="text-xs font-semibold text-orange-300">{worstSubject.percentage}%</span>
                 </div>
                 <p className="text-xs font-medium truncate">{worstSubject.name}</p>
@@ -373,7 +373,7 @@ export function AttendanceWrapped({
               <ul className="text-sm space-y-1 opacity-90">
                 <li>Overall attendance percentage</li>
                 <li>Classes attended & bunked</li>
-                <li>Best & focus subjects</li>
+                <li>Best & subjects needing attention</li>
                 <li>Link to traceIt</li>
               </ul>
             </motion.div>
