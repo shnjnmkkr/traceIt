@@ -23,7 +23,7 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 
-supabase/
+/supabase/
 
 # Bug reports
 public/bug-reports/
