@@ -413,8 +413,7 @@ export function AttendanceWrapped({
     setCurrentSlide(4);
     
     // Wait for slide transition (300ms) + all animations to complete (max delay is 1.2s) + extra buffer
-    // Increased significantly to ensure all text is fully rendered
-    await new Promise(resolve => setTimeout(resolve, 4000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     try {
       // Hide navigation dots and any other UI elements
@@ -426,14 +425,8 @@ export function AttendanceWrapped({
       // Disable all animations by adding a class
       cardRef.current.classList.add('capturing');
       
-      // Force a reflow to ensure DOM is fully updated
-      void cardRef.current.offsetHeight;
-      
-      // Wait longer to ensure everything is static and text is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Force another reflow before capture
-      void cardRef.current.offsetHeight;
+      // Wait a bit more to ensure everything is static
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#000000',
@@ -478,8 +471,7 @@ export function AttendanceWrapped({
     setCurrentSlide(4);
     
     // Wait for slide transition (300ms) + all animations to complete (max delay is 1.2s) + extra buffer
-    // Increased significantly to ensure all text is fully rendered
-    await new Promise(resolve => setTimeout(resolve, 4000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     try {
       // Hide navigation dots and any other UI elements
@@ -491,14 +483,16 @@ export function AttendanceWrapped({
       // Disable all animations by adding a class
       cardRef.current.classList.add('capturing');
       
-      // Force a reflow to ensure DOM is fully updated
-      void cardRef.current.offsetHeight;
+      // Force browser reflow and repaint to ensure everything is rendered
+      void cardRef.current.offsetHeight; // Force reflow
       
-      // Wait longer to ensure everything is static and text is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for multiple animation frames to ensure browser has painted final state
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise(resolve => requestAnimationFrame(resolve));
       
-      // Force another reflow before capture
-      void cardRef.current.offsetHeight;
+      // Additional small delay to ensure everything is fully painted
+      await new Promise(resolve => setTimeout(resolve, 200));
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#000000',
@@ -510,6 +504,14 @@ export function AttendanceWrapped({
         height: cardRef.current.offsetHeight,
         windowWidth: cardRef.current.scrollWidth,
         windowHeight: cardRef.current.scrollHeight,
+        onclone: (clonedDoc) => {
+          // Ensure all text is visible in the cloned document
+          const clonedCard = clonedDoc.querySelector('[class*="aspect-[9/16]"]');
+          if (clonedCard) {
+            (clonedCard as HTMLElement).style.visibility = 'visible';
+            (clonedCard as HTMLElement).style.opacity = '1';
+          }
+        },
       });
 
       // Restore everything
