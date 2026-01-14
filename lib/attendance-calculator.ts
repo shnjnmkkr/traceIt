@@ -32,8 +32,14 @@ export function calculateAttendanceStats(
     teacherAbsent: number;
     labAttended: number;
     labTotal: number;
+    labBunked: number;
+    labLeaves: number;
+    labTeacherAbsent: number;
     lectureAttended: number;
     lectureTotal: number;
+    lectureBunked: number;
+    lectureLeaves: number;
+    lectureTeacherAbsent: number;
   }>();
 
   // Initialize subjects
@@ -50,8 +56,14 @@ export function calculateAttendanceStats(
       teacherAbsent: 0,
       labAttended: 0,
       labTotal: 0,
+      labBunked: 0,
+      labLeaves: 0,
+      labTeacherAbsent: 0,
       lectureAttended: 0,
       lectureTotal: 0,
+      lectureBunked: 0,
+      lectureLeaves: 0,
+      lectureTeacherAbsent: 0,
     });
   });
 
@@ -118,14 +130,21 @@ export function calculateAttendanceStats(
           subjectStats.leaves += weight;
           subjectStats.total += weight;
           if (isLab) {
+            subjectStats.labLeaves += weight;
             subjectStats.labTotal += weight;
           } else {
+            subjectStats.lectureLeaves += weight;
             subjectStats.lectureTotal += weight;
           }
           break;
           
         case "bunk":
           subjectStats.bunked += weight;
+          if (isLab) {
+            subjectStats.labBunked += weight;
+          } else {
+            subjectStats.lectureBunked += weight;
+          }
           if (settings.countMassBunkAs === "attended") {
             subjectStats.attended += weight;
             subjectStats.total += weight;
@@ -149,6 +168,11 @@ export function calculateAttendanceStats(
           
         case "teacher_absent":
           subjectStats.teacherAbsent += weight;
+          if (isLab) {
+            subjectStats.labTeacherAbsent += weight;
+          } else {
+            subjectStats.lectureTeacherAbsent += weight;
+          }
           if (settings.countTeacherAbsentAs === "attended") {
             subjectStats.attended += weight;
             subjectStats.total += weight;
@@ -196,6 +220,9 @@ export function calculateAttendanceStats(
         attended: s.labAttended,
         total: s.labTotal,
         percentage: Math.round((s.labAttended / s.labTotal) * 10000) / 100,
+        bunked: s.labBunked,
+        leaves: s.labLeaves,
+        teacherAbsent: s.labTeacherAbsent,
       };
     }
     
@@ -205,6 +232,9 @@ export function calculateAttendanceStats(
         attended: s.lectureAttended,
         total: s.lectureTotal,
         percentage: Math.round((s.lectureAttended / s.lectureTotal) * 10000) / 100,
+        bunked: s.lectureBunked,
+        leaves: s.lectureLeaves,
+        teacherAbsent: s.lectureTeacherAbsent,
       };
     }
     

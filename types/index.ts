@@ -38,11 +38,17 @@ export interface SubjectAnalytics {
     attended: number;
     total: number;
     percentage: number;
+    bunked: number;
+    leaves: number;
+    teacherAbsent: number;
   };
   lecture?: {
     attended: number;
     total: number;
     percentage: number;
+    bunked: number;
+    leaves: number;
+    teacherAbsent: number;
   };
 }
 

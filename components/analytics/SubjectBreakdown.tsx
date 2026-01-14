@@ -68,23 +68,39 @@ export function SubjectBreakdown({ subjects }: SubjectBreakdownProps) {
               <span style={{ color: getStatusColor("teacher_absent") }}>T: {subject.teacherAbsent}</span>
             </div>
 
-            {/* Show separate lab and lecture stats if both exist */}
-            {subject.lab && subject.lecture && (
-              <div className="flex gap-2 mt-2">
-                <div className="flex-1 bg-muted/50 rounded px-2 py-1.5 border border-border">
-                  <div className="text-xs font-mono text-muted-foreground mb-0.5">Lab</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono font-semibold">{subject.lab.percentage}%</span>
-                    <span className="text-xs text-muted-foreground font-mono">{subject.lab.attended}/{subject.lab.total}</span>
+            {/* Show separate lab and lecture stats */}
+            {(subject.lab || subject.lecture) && (
+              <div className={`flex gap-2 mt-2 ${subject.lab && subject.lecture ? '' : 'justify-start'}`}>
+                {subject.lab && (
+                  <div className="flex-1 bg-muted/50 rounded px-2 py-1.5 border border-border">
+                    <div className="text-xs font-mono text-muted-foreground mb-0.5">Lab</div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-mono font-semibold">{subject.lab.percentage}%</span>
+                      <span className="text-xs text-muted-foreground font-mono">{subject.lab.attended}/{subject.lab.total}</span>
+                    </div>
+                    <div className="flex gap-2 text-[10px] text-muted-foreground font-mono">
+                      <span style={{ color: getStatusColor("attended") }}>A: {subject.lab.attended}</span>
+                      <span style={{ color: getStatusColor("bunk") }}>B: {subject.lab.bunked}</span>
+                      <span style={{ color: getStatusColor("absent") }}>L: {subject.lab.leaves}</span>
+                      <span style={{ color: getStatusColor("teacher_absent") }}>T: {subject.lab.teacherAbsent}</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex-1 bg-muted/50 rounded px-2 py-1.5 border border-border">
-                  <div className="text-xs font-mono text-muted-foreground mb-0.5">Lecture</div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono font-semibold">{subject.lecture.percentage}%</span>
-                    <span className="text-xs text-muted-foreground font-mono">{subject.lecture.attended}/{subject.lecture.total}</span>
+                )}
+                {subject.lecture && (
+                  <div className="flex-1 bg-muted/50 rounded px-2 py-1.5 border border-border">
+                    <div className="text-xs font-mono text-muted-foreground mb-0.5">Lecture</div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-mono font-semibold">{subject.lecture.percentage}%</span>
+                      <span className="text-xs text-muted-foreground font-mono">{subject.lecture.attended}/{subject.lecture.total}</span>
+                    </div>
+                    <div className="flex gap-2 text-[10px] text-muted-foreground font-mono">
+                      <span style={{ color: getStatusColor("attended") }}>A: {subject.lecture.attended}</span>
+                      <span style={{ color: getStatusColor("bunk") }}>B: {subject.lecture.bunked}</span>
+                      <span style={{ color: getStatusColor("absent") }}>L: {subject.lecture.leaves}</span>
+                      <span style={{ color: getStatusColor("teacher_absent") }}>T: {subject.lecture.teacherAbsent}</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </motion.div>
