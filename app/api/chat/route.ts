@@ -215,36 +215,65 @@ export async function POST(request: Request) {
         overall: `${stats.overall}%`,
         subjects: stats.subjects.map(s => {
           const semesterTotal = semesterTotals.get(s.code);
+          const totalInSemester = semesterTotal?.total || 0;
+          const remaining = Math.max(0, totalInSemester - s.total);
+          
+          // Pre-calculate "can miss" values for the subject
+          const targetClasses = Math.ceil((settings.targetPercentage / 100) * totalInSemester);
+          const minimumNeeded = Math.max(0, targetClasses - s.attended);
+          const canMiss = Math.max(0, remaining - minimumNeeded);
+          
           const subjectData: any = {
             name: s.name,
             code: s.code,
             percentage: `${s.percentage}%`,
             attended: s.attended,
-            total: s.total, // Classes occurred so far
-            semesterTotal: semesterTotal?.total || 0, // Total classes in entire semester
-            remaining: Math.max(0, (semesterTotal?.total || 0) - s.total), // Classes remaining in semester
+            totalSoFar: s.total, // Classes occurred so far (up to today)
+            totalInSemester: totalInSemester, // Total classes in entire semester
+            remaining: remaining, // Classes remaining in semester
+            targetClasses: targetClasses, // Number of classes needed to meet target percentage
+            minimumNeeded: minimumNeeded, // Must attend this many more classes
+            canMiss: canMiss, // Can miss this many classes this semester
             bunked: s.bunked,
             leaves: s.leaves,
             teacherAbsent: s.teacherAbsent,
           };
           
-          // Include lab/lecture breakdown with semester totals
+          // Include lab/lecture breakdown with pre-calculated values
           if (s.lab) {
+            const labSemesterTotal = semesterTotal?.labTotal || 0;
+            const labRemaining = Math.max(0, labSemesterTotal - s.lab.total);
+            const labTarget = Math.ceil((settings.targetPercentage / 100) * labSemesterTotal);
+            const labMinimumNeeded = Math.max(0, labTarget - s.lab.attended);
+            const labCanMiss = Math.max(0, labRemaining - labMinimumNeeded);
+            
             subjectData.lab = {
               attended: s.lab.attended,
-              total: s.lab.total, // Lab classes occurred so far
-              semesterTotal: semesterTotal?.labTotal || 0, // Total lab classes in semester
-              remaining: Math.max(0, (semesterTotal?.labTotal || 0) - s.lab.total), // Lab classes remaining
+              totalSoFar: s.lab.total, // Lab classes occurred so far
+              totalInSemester: labSemesterTotal, // Total lab classes in semester
+              remaining: labRemaining, // Lab classes remaining
+              targetClasses: labTarget,
+              minimumNeeded: labMinimumNeeded,
+              canMiss: labCanMiss,
               percentage: `${s.lab.percentage}%`,
             };
           }
           
           if (s.lecture) {
+            const lectureSemesterTotal = semesterTotal?.lectureTotal || 0;
+            const lectureRemaining = Math.max(0, lectureSemesterTotal - s.lecture.total);
+            const lectureTarget = Math.ceil((settings.targetPercentage / 100) * lectureSemesterTotal);
+            const lectureMinimumNeeded = Math.max(0, lectureTarget - s.lecture.attended);
+            const lectureCanMiss = Math.max(0, lectureRemaining - lectureMinimumNeeded);
+            
             subjectData.lecture = {
               attended: s.lecture.attended,
-              total: s.lecture.total, // Lecture classes occurred so far
-              semesterTotal: semesterTotal?.lectureTotal || 0, // Total lecture classes in semester
-              remaining: Math.max(0, (semesterTotal?.lectureTotal || 0) - s.lecture.total), // Lecture classes remaining
+              totalSoFar: s.lecture.total, // Lecture classes occurred so far
+              totalInSemester: lectureSemesterTotal, // Total lecture classes in semester
+              remaining: lectureRemaining, // Lecture classes remaining
+              targetClasses: lectureTarget,
+              minimumNeeded: lectureMinimumNeeded,
+              canMiss: lectureCanMiss,
               percentage: `${s.lecture.percentage}%`,
             };
           }
@@ -282,35 +311,36 @@ ${JSON.stringify(context, null, 2)}
 CRITICAL RULES:
 1. ALWAYS provide CONTEXT and REFERENCE POINTS - never give numbers without explaining what they mean.
 2. When saying "you can miss X classes", ALWAYS specify the time period (this semester, this week, remaining in semester).
-3. Include current status when giving "can miss" answers (e.g., "You've attended 4 out of 7 classes so far, with 56 remaining this semester").
+3. Include current status when giving "can miss" answers.
 4. Be CONVERSATIONAL but INFORMATIVE - give complete, actionable information.
 5. Use ONLY the data provided. Don't ask for more details.
 6. If asked something unrelated, say: "I only help with timetable and attendance in traceIt."
 
-CALCULATING "HOW MANY CLASSES CAN I MISS":
-For each subject, use this calculation:
-- semesterTotal = total classes in entire semester (from context)
-- attended = classes attended so far (from context)
-- remaining = classes remaining in semester (from context)
-- target = targetPercentage% of semesterTotal (round up to nearest whole number)
-- minimumNeeded = target - attended (must attend this many more to reach target)
-- canMiss = remaining - minimumNeeded (can miss this many)
+USING THE DATA:
+All calculations are already done for you! Use these pre-calculated values from the context:
+- totalSoFar = classes that have occurred so far (up to today)
+- totalInSemester = total classes in entire semester
+- remaining = classes remaining in semester
+- attended = classes you've attended so far
+- targetClasses = number of classes needed to meet target percentage
+- minimumNeeded = must attend this many more classes to reach target
+- canMiss = can miss this many classes this semester
 
-IMPORTANT: Labs count towards attendance targets too! Never say "you can miss as many labs as you want" - labs are part of the total attendance requirement.
-
-For subjects with both lab and lecture, calculate separately:
-- Use lecture.semesterTotal, lecture.attended, lecture.remaining for lecture calculations
-- Use lab.semesterTotal, lab.attended, lab.remaining for lab calculations
-- Both contribute to the overall subject attendance target
+IMPORTANT: 
+- Labs count towards attendance targets too! Never say "you can miss as many labs as you want"
+- For subjects with both lab and lecture, use the separate lab/lecture breakdowns
+- Always clarify: "totalSoFar" means classes occurred so far, "totalInSemester" means total in entire semester
 
 GOOD RESPONSE EXAMPLES:
 • "For ASM: You've attended 4 out of 7 classes so far (57%), with 56 classes remaining this semester. To meet your 75% target, you need to attend at least 47 classes total. You can miss 13 more classes this semester."
 • "For CS lectures: You've attended 2 lectures so far, with 42 remaining. You need 45 total to meet the target, so you can miss 1 more lecture this semester."
+• "For PPE: You've attended 2 out of 6 classes so far (33%), with 56 classes remaining. You need 47 classes total to meet your target, so you can miss 11 more classes this semester."
 
 BAD RESPONSE EXAMPLES (DON'T DO THIS):
 • "You can miss as many lab sessions as you want" (WRONG - labs count towards attendance)
-• "For ASM, you can miss 3 more lectures and 0 more labs." (No context, wrong calculation)
+• "For ASM, you can miss 3 more lectures and 0 more labs." (No context, confusing numbers)
 • "You can miss 3 more lectures." (No subject, no time period, no reference point)
+• Mixing up totalSoFar (7) with totalInSemester (63) - these are different!
 
 RESPONSE FORMAT:
 - No markdown formatting
