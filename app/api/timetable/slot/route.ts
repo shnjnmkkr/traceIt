@@ -43,11 +43,10 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error('❌ Error creating slot:', error);
+      console.error('Error creating slot:', error);
       throw error;
     }
 
-    console.log('✅ Slot created successfully:', newSlot);
     return NextResponse.json({ success: true, slot: newSlot });
   } catch (error: any) {
     console.error('Error creating slot:', error);
@@ -169,11 +168,10 @@ export async function DELETE(request: Request) {
       .eq('id', slotId);
 
     if (error) {
-      console.error('❌ Error deleting slot:', error);
+      console.error('Error deleting slot:', error);
       throw error;
     }
 
-    console.log('✅ Slot deleted successfully:', slotId);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error deleting slot:', error);

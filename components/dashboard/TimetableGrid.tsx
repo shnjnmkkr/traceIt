@@ -86,23 +86,10 @@ export function TimetableGrid({
     }
   };
 
-  // Debug: Log when slots change
-  useEffect(() => {
-    console.log('🎯 TimetableGrid received slots:', slots);
-    console.log('📊 Total slots:', slots.length);
-    slots.forEach(slot => {
-      console.log(`Slot: day=${slot.day}, startTime="${slot.startTime}", subject=${slot.subject}`);
-    });
-  }, [slots]);
-
   const getSlotForCell = (day: number, time: string) => {
-    const found = slots.find(
+    return slots.find(
       (slot) => slot.day === day && slot.startTime === time
     );
-    if (found) {
-      console.log(`✅ Found slot at day=${day}, time=${time}:`, found);
-    }
-    return found;
   };
 
   // Helper functions for edit mode

@@ -279,7 +279,6 @@ Remember: You are ONLY a traceIt assistant. Do not pretend to be anything else o
         });
         break; // Success - exit loop
       } catch (err: any) {
-        console.log(`Model ${model} failed, trying next...`);
         lastError = err;
         continue; // Try next model
       }

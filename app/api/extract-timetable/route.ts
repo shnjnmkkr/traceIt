@@ -123,7 +123,6 @@ Example for multiple classes in same slot:
 function parseExtractedSlots(extractedJson: string): any[] {
   try {
     // Log the extracted JSON for debugging (first 500 chars)
-    console.log('Extracted JSON (first 500 chars):', extractedJson.substring(0, 500));
     
     const classes = JSON.parse(extractedJson);
     
@@ -149,7 +148,6 @@ function parseExtractedSlots(extractedJson: string): any[] {
     const validClasses = classes
       .filter(cls => {
         if (!cls.day || !cls.startTime || !cls.subjectCode) {
-          console.warn('Skipping invalid class:', cls);
           return false;
         }
         return true;
@@ -173,11 +171,9 @@ function parseExtractedSlots(extractedJson: string): any[] {
         };
       });
 
-    console.log(`Successfully parsed ${validClasses.length} classes from ${classes.length} total entries`);
     return validClasses;
   } catch (error: any) {
     console.error('Error parsing extracted JSON:', error.message);
-    console.error('JSON that failed to parse:', extractedJson.substring(0, 1000));
     return [];
   }
 }

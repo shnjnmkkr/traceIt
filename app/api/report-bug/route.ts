@@ -68,9 +68,6 @@ export async function POST(request: Request) {
       report.stepsToReproduce = stepsToReproduce;
     }
 
-    console.log(`=== ${type?.toUpperCase() || 'BUG'} REPORT RECEIVED ===`);
-    console.log(JSON.stringify(report, null, 2));
-    console.log('===========================');
 
     // If screenshot exists, save it (optional - for development)
     if (screenshot) {
@@ -84,7 +81,6 @@ export async function POST(request: Request) {
         
         // Note: You'll need to create the public/bug-reports directory manually
         await writeFile(path, buffer);
-        console.log(`Screenshot saved: ${filename}`);
       } catch (error) {
         console.error('Error saving screenshot:', error);
         // Continue even if screenshot save fails

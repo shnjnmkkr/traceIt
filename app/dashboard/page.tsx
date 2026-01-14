@@ -160,19 +160,13 @@ export default function DashboardPage() {
     if (!timetable) return;
     
     try {
-      console.log('🗑️ Deleting slot:', slotId);
-      
       const response = await fetch('/api/timetable/slot', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slotId }),
       });
 
-      const result = await response.json();
-      console.log('✅ Delete response:', result);
-
       if (!response.ok) {
-        console.error('❌ Failed to delete slot:', result);
         throw new Error('Failed to delete slot');
       }
       
@@ -184,10 +178,8 @@ export default function DashboardPage() {
           slots: prev.slots.filter(s => s.id !== slotId)
         };
       });
-      
-      console.log('✅ Slot deleted successfully');
     } catch (error) {
-      console.error('❌ Error deleting slot:', error);
+      console.error('Error deleting slot:', error);
     }
   };
 
@@ -235,8 +227,6 @@ export default function DashboardPage() {
     if (!timetable) return;
     
     try {
-      console.log('📝 Adding slot:', { day, startTime, endTime, subject, subjectName, type });
-      
       const response = await fetch('/api/timetable/slot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -252,23 +242,17 @@ export default function DashboardPage() {
       });
 
       const result = await response.json();
-      console.log('✅ Slot creation response:', result);
 
       if (!response.ok) {
-        console.error('❌ Failed to create slot:', result);
         throw new Error('Failed to add slot');
       }
       
       // Reload timetable
-      console.log('🔄 Fetching updated timetable...');
       const ttResponse = await fetch('/api/timetable');
       const ttData = await ttResponse.json();
-      console.log('📊 Timetable data received:', ttData);
-      console.log('📋 Slots in timetable:', ttData.timetable?.slots);
       
       if (ttData.timetable) {
         setTimetable(ttData.timetable);
-        console.log('✅ Timetable state updated');
         
         // If in edit mode, set the newly created slot to editing
         if (isEditMode && result.slot) {
@@ -276,7 +260,7 @@ export default function DashboardPage() {
         }
       }
     } catch (error) {
-      console.error('❌ Error adding slot:', error);
+      console.error('Error adding slot:', error);
     }
   };
 
@@ -291,7 +275,6 @@ export default function DashboardPage() {
     const nextTimeIdx = currentTimeIdx + (currentSlot.rowSpan || 1);
     
     if (nextTimeIdx >= TIME_SLOTS.length) {
-      alert('Cannot merge beyond the last time slot');
       return;
     }
 
@@ -299,7 +282,6 @@ export default function DashboardPage() {
     const nextSlot = timetable.slots.find(s => s.day === currentSlot.day && s.startTime === nextTime);
     
     if (nextSlot && (nextSlot.subject || nextSlot.subjectName)) {
-      alert('Cannot merge with a slot that has content');
       return;
     }
 
@@ -330,7 +312,6 @@ export default function DashboardPage() {
       }
     } catch (error) {
       console.error('Error merging slot:', error);
-      alert('Failed to merge slots. Please try again.');
     }
   };
 

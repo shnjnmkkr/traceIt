@@ -29,16 +29,16 @@ export function validateEnvironment() {
     );
   }
 
-  // Warn about optional keys
-  const missingOptional = optional.filter(key => !process.env[key]);
-  if (missingOptional.length > 0) {
-    console.warn(
-      `⚠️  Missing optional environment variables: ${missingOptional.join(', ')}\n` +
-      `Some features may not work without these.`
-    );
+  // Warn about optional keys (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    const missingOptional = optional.filter(key => !process.env[key]);
+    if (missingOptional.length > 0) {
+      console.warn(
+        `Missing optional environment variables: ${missingOptional.join(', ')}\n` +
+        `Some features may not work without these.`
+      );
+    }
   }
-
-  console.log('✅ Environment variables validated');
 }
 
 // Security checks
@@ -47,22 +47,25 @@ export function validateApiKeys() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (supabaseUrl && !supabaseUrl.includes('supabase.co')) {
-    console.warn('⚠️  Supabase URL does not look valid');
-  }
+  // Security checks (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    if (supabaseUrl && !supabaseUrl.includes('supabase.co')) {
+      console.warn('Supabase URL does not look valid');
+    }
 
-  if (supabaseKey && supabaseKey.length < 100) {
-    console.warn('⚠️  Supabase anon key seems too short');
-  }
+    if (supabaseKey && supabaseKey.length < 100) {
+      console.warn('Supabase anon key seems too short');
+    }
 
-  // Check if using placeholder/example values
-  const dangerousValues = ['your-api-key', 'placeholder', 'example', 'test'];
-  
-  for (const [key, value] of Object.entries(process.env)) {
-    if (key.includes('API_KEY') && typeof value === 'string') {
-      const lowerValue = value.toLowerCase();
-      if (dangerousValues.some(dangerous => lowerValue.includes(dangerous))) {
-        console.error(`❌ ${key} contains a placeholder value! Please update it.`);
+    // Check if using placeholder/example values
+    const dangerousValues = ['your-api-key', 'placeholder', 'example', 'test'];
+    
+    for (const [key, value] of Object.entries(process.env)) {
+      if (key.includes('API_KEY') && typeof value === 'string') {
+        const lowerValue = value.toLowerCase();
+        if (dangerousValues.some(dangerous => lowerValue.includes(dangerous))) {
+          console.error(`${key} contains a placeholder value! Please update it.`);
+        }
       }
     }
   }

@@ -1,0 +1,11 @@
+# Vercel ignore file
+node_modules
+.next
+.env.local
+.env*.local
+*.log
+.DS_Store
+supabase/
+public/bug-reports/
+ADMIN_SETUP.md
+SECURITY.md
