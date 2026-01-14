@@ -5,7 +5,7 @@ node_modules
 .env*.local
 *.log
 .DS_Store
-supabase/
+/supabase/
 public/bug-reports/
 ADMIN_SETUP.md
 SECURITY.md
