@@ -471,7 +471,8 @@ export function AttendanceWrapped({
     setCurrentSlide(4);
     
     // Wait for slide transition (300ms) + all animations to complete (max delay is 1.2s) + extra buffer
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // Increased significantly to ensure all text is fully rendered
+    await new Promise(resolve => setTimeout(resolve, 4000));
 
     try {
       // Hide navigation dots and any other UI elements
@@ -483,8 +484,14 @@ export function AttendanceWrapped({
       // Disable all animations by adding a class
       cardRef.current.classList.add('capturing');
       
-      // Wait a bit more to ensure everything is static
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Force a reflow to ensure DOM is fully updated
+      void cardRef.current.offsetHeight;
+      
+      // Wait longer to ensure everything is static and text is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Force another reflow before capture
+      void cardRef.current.offsetHeight;
 
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: '#000000',
