@@ -160,10 +160,17 @@ export async function POST(request: Request) {
   }
 }
 
-// PATCH - Increment usage count
+// PATCH - Increment usage count and auto-upvote
 export async function PATCH(request: Request) {
   try {
     const supabase = await createClient();
+    
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { templateId } = body;
 
@@ -171,6 +178,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Template ID required' }, { status: 400 });
     }
 
+    // Increment usage count
     const { error } = await supabase.rpc('increment_template_usage', {
       template_id: templateId,
     });
@@ -188,6 +196,33 @@ export async function PATCH(request: Request) {
         .update({ usage_count: (template?.usage_count || 0) + 1 })
         .eq('id', templateId);
     }
+
+    // Auto-upvote: Check if user has already voted
+    const { data: existingVote } = await supabase
+      .from('community_template_votes')
+      .select('vote_type')
+      .eq('template_id', templateId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!existingVote) {
+      // User hasn't voted yet - add upvote
+      await supabase
+        .from('community_template_votes')
+        .insert({
+          template_id: templateId,
+          user_id: user.id,
+          vote_type: 'upvote',
+        });
+    } else if (existingVote.vote_type === 'downvote') {
+      // User had downvoted - change to upvote
+      await supabase
+        .from('community_template_votes')
+        .update({ vote_type: 'upvote' })
+        .eq('template_id', templateId)
+        .eq('user_id', user.id);
+    }
+    // If user already upvoted, do nothing
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
