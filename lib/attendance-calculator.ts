@@ -63,7 +63,8 @@ export function calculateAttendanceStats(
     if (dayOfWeek >= 5) return;
 
     const dateStr = format(date, "yyyy-MM-dd");
-    const isPastClass = date < today;
+    const isPastDate = date < today;
+    const isToday = format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
     
     // Find all slots for this day
     const daySlots = slots.filter(s => s.day === dayOfWeek);
@@ -72,12 +73,22 @@ export function calculateAttendanceStats(
       const recordKey = `${dateStr}-${slot.id}`;
       let status = attendanceRecords.get(recordKey);
       
-      // If no record exists and class is in the past, count as absent
-      if (!status && isPastClass) {
+      // Check if class has occurred (past date OR today but time has passed)
+      let hasClassOccurred = isPastDate;
+      if (isToday) {
+        // For today's classes, check if the start time has passed
+        const [slotHour, slotMinute] = slot.startTime.split(':').map(Number);
+        const classStartTime = new Date(today);
+        classStartTime.setHours(slotHour, slotMinute, 0, 0);
+        hasClassOccurred = classStartTime < today;
+      }
+      
+      // If no record exists and class has occurred, count as absent
+      if (!status && hasClassOccurred) {
         status = "absent";
       }
       
-      // Skip if no record and class is today/future (not yet occurred)
+      // Skip if no record and class hasn't occurred yet (upcoming)
       if (!status) return;
 
       const subjectStats = subjectMap.get(slot.subject);
