@@ -254,7 +254,7 @@ export function AttendanceWrapped({
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={isCapturing ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 1 }}
                 transition={isCapturing ? { duration: 0 } : { delay: 0.3 }}
-                className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 w-full max-w-sm"
+                className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/20 w-full max-w-sm mx-auto"
               >
             {/* Overall */}
             <div className="text-center mb-4 pb-4 border-b border-white/20">
@@ -475,17 +475,25 @@ export function AttendanceWrapped({
         <div
           ref={cardRef}
           className={`aspect-[9/16] w-full rounded-2xl overflow-hidden shadow-2xl relative ${isCapturing ? 'pointer-events-none' : ''}`}
+          style={{ contain: 'layout style paint' }}
         >
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={currentSlide}
               initial={{ opacity: 0, x: 100 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
               className={`absolute inset-0 bg-gradient-to-br ${slides[currentSlide].gradient}`}
+              style={{ 
+                willChange: 'transform, opacity',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+              }}
             >
-              {slides[currentSlide].content}
+              <div className="h-full w-full overflow-hidden">
+                {slides[currentSlide].content}
+              </div>
             </motion.div>
           </AnimatePresence>
 
