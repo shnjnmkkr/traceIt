@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS community_templates (
   university TEXT,
   course TEXT,
   semester TEXT,
+  group TEXT,
   
   -- Creator Info
   creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
