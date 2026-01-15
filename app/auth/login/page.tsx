@@ -129,10 +129,17 @@ export default function LoginPage() {
         }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('Guest login: Failed to parse response', jsonError);
+        throw new Error('Invalid response from server');
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create guest session');
+        console.error('Guest login: API error', response.status, data);
+        throw new Error(data?.error || `Failed to create guest session (${response.status})`);
       }
 
       // Reset hCaptcha
@@ -143,7 +150,8 @@ export default function LoginPage() {
       router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      console.error('Guest login error:', err);
+      setError(err.message || "An error occurred. Please check if anonymous authentication is enabled in Supabase.");
       setLoading(false);
       // Reset hCaptcha on error
       hcaptchaRef.current?.resetCaptcha();
