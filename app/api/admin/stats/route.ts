@@ -21,6 +21,7 @@ export async function GET() {
     // Calculate dates for analytics
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const sevenDaysAgoDate = sevenDaysAgo.split('T')[0];
 
     // Fetch all stats in parallel (using service role for auth.users access)
     // Note: We'll use timetables to estimate user counts since we can't directly query auth.users
