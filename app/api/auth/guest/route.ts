@@ -66,6 +66,7 @@ export async function POST(request: Request) {
     const supabase = await createClient();
     
     // Create anonymous user
+    let guestData;
     try {
       const { data, error } = await supabase.auth.signInAnonymously({
         options: {
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
         );
       }
 
+      guestData = data;
       console.log('Guest login: Successfully created guest user', data.user.id);
     } catch (supabaseError: any) {
       console.error('Guest login: Supabase exception', supabaseError);
@@ -103,10 +105,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       user: {
-        id: data.user.id,
+        id: guestData.user.id,
         is_guest: true,
       },
-      session: data.session 
+      session: guestData.session 
     });
   } catch (error: any) {
     console.error('Error in guest route:', error);
