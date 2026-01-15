@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Sparkles } from "lucide-react";
+import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Sparkles, UserPlus } from "lucide-react";
 import { addWeeks, subWeeks, startOfWeek, format } from "date-fns";
 import { WeekSelector } from "@/components/dashboard/WeekSelector";
 import { TimetableHeader } from "@/components/dashboard/TimetableHeader";
@@ -49,6 +49,8 @@ export default function DashboardPage() {
   // Data State
   const [timetable, setTimetable] = useState<Timetable | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [showGuestBanner, setShowGuestBanner] = useState(false);
   const [settings, setSettings] = useState<UserSettings>({
     targetPercentage: 75,
     countMassBunkAs: "absent",
@@ -71,10 +73,15 @@ export default function DashboardPage() {
           return;
         }
         
-        // Get user email
+        // Get user email and check if guest
         if (session.user?.email) {
           setUserEmail(session.user.email);
         }
+        
+        // Check if user is a guest
+        const guestStatus = session.user?.user_metadata?.is_guest || false;
+        setIsGuest(guestStatus);
+        setShowGuestBanner(guestStatus);
         
         // Fetch timetable
         const ttResponse = await fetch('/api/timetable');
@@ -462,6 +469,50 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
+      {/* Guest Banner */}
+      <AnimatePresence>
+        {showGuestBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-0 left-0 right-0 z-50 bg-warning/10 border-b border-warning/30 backdrop-blur-sm"
+          >
+            <div className="max-w-7xl mx-auto px-4 py-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <AlertCircle className="w-5 h-5 text-warning flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">You're browsing as a guest</p>
+                    <p className="text-xs text-muted-foreground">
+                      Your data is temporary. Sign up to save your timetable and attendance permanently.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={() => router.push('/auth/login')}
+                    className="gap-2 font-mono"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Sign Up
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowGuestBanner(false)}
+                    className="p-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
       {/* Left Panel - Resizable Stats + Settings */}
       <AnimatePresence>
         {isLeftPanelOpen && (

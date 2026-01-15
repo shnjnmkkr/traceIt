@@ -64,7 +64,14 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session if expired - this keeps users logged in
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Block guests from admin routes
+  if (user && user.user_metadata?.is_guest) {
+    if (request.nextUrl.pathname.startsWith('/admin')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
 
   return response
 }

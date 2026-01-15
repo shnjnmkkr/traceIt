@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Settings, User, LogOut, ChevronDown, RefreshCw, Trash2, AlertTriangle, Shield } from "lucide-react";
+import { Settings, User, LogOut, ChevronDown, RefreshCw, Trash2, AlertTriangle, Shield, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 
@@ -16,21 +16,25 @@ export function ProfileDropdown() {
   const [loading, setLoading] = useState(false);
   const [userEmail, setUserEmail] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
 
-  // Get user email and admin status
+  // Get user email, admin status, and guest status
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         setUserEmail(data.user.email || "");
+        setIsGuest(data.user.user_metadata?.is_guest || false);
       }
     });
 
-    // Check admin status
-    fetch('/api/admin/check')
-      .then(res => res.json())
-      .then(data => setIsAdmin(data.isAdmin || false))
-      .catch(() => setIsAdmin(false));
-  }, [supabase]);
+    // Check admin status (only for non-guests)
+    if (!isGuest) {
+      fetch('/api/admin/check')
+        .then(res => res.json())
+        .then(data => setIsAdmin(data.isAdmin || false))
+        .catch(() => setIsAdmin(false));
+    }
+  }, [supabase, isGuest]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -114,8 +118,12 @@ export function ProfileDropdown() {
                     <User className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">Account</p>
-                    <p className="text-xs text-muted-foreground truncate font-mono">{userEmail}</p>
+                    <p className="text-sm font-semibold truncate">
+                      {isGuest ? 'Guest Account' : 'Account'}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate font-mono">
+                      {isGuest ? 'Temporary session' : userEmail}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -136,15 +144,30 @@ export function ProfileDropdown() {
                     <span className="text-sm">Admin Dashboard</span>
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="w-full justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm">Logout</span>
-                </Button>
+                {isGuest ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      router.push('/auth/login');
+                      setIsOpen(false);
+                    }}
+                    className="w-full justify-start gap-3 h-9 px-3 text-primary hover:text-primary hover:bg-primary/10"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span className="text-sm">Sign Up to Save</span>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="w-full justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="text-sm">Logout</span>
+                  </Button>
+                )}
               </div>
 
               {/* Danger Zone */}

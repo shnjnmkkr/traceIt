@@ -480,10 +480,11 @@ export async function POST(request: Request) {
       },
     };
 
-    // 8. Call Groq API with fallback models
-    const models = ['llama-3.1-8b-instant', 'mixtral-8x7b-32768', 'gemma2-9b-it'];
+    // 8. Call Groq API with fallback models (70b first, then 8b fallback)
+    const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
     let completion;
     let lastError;
+    let usedFallback = false;
 
     for (const model of models) {
       try {
@@ -627,9 +628,21 @@ Days: Mon-Fri only. Times: 24-hour format.`,
           temperature: 0.7,
           max_tokens: 400,
         });
+        
+        // Success - log if we used fallback
+        if (usedFallback) {
+          console.log(`Used fallback model: ${model} (original: ${models[0]})`);
+        }
         break; // Success - exit loop
       } catch (err: any) {
         lastError = err;
+        
+        // Check if it's a rate limit error
+        if (err.status === 429 || err.message?.includes('rate limit') || err.message?.includes('quota')) {
+          console.warn(`Rate limit/quota hit for ${model}, trying fallback...`);
+          usedFallback = true;
+        }
+        
         continue; // Try next model
       }
     }

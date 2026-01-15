@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, Lock, LogIn, UserPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -15,6 +16,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
+  const hcaptchaRef = useRef<HCaptcha>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -101,6 +104,50 @@ export default function LoginPage() {
     } catch (err: any) {
       setError(err.message || "An error occurred");
       setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setLoading(true);
+    setError("");
+
+    // Check if hCaptcha is completed
+    if (!hcaptchaToken) {
+      setError("Please complete the hCaptcha verification");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/guest', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          hcaptchaToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create guest session');
+      }
+
+      // Reset hCaptcha
+      hcaptchaRef.current?.resetCaptcha();
+      setHcaptchaToken(null);
+
+      // Refresh to get the new session
+      router.push('/dashboard');
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
+      setLoading(false);
+      // Reset hCaptcha on error
+      hcaptchaRef.current?.resetCaptcha();
+      setHcaptchaToken(null);
     }
   };
 
@@ -272,6 +319,43 @@ export default function LoginPage() {
             </svg>
             {loading ? "Connecting..." : "Google"}
           </Button>
+
+          {/* Guest Login */}
+          <div className="mt-4 space-y-3">
+            <div className="flex justify-center">
+              <HCaptcha
+                ref={hcaptchaRef}
+                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || ''}
+                onVerify={(token) => setHcaptchaToken(token)}
+                onExpire={() => setHcaptchaToken(null)}
+                onError={() => {
+                  setError("hCaptcha error. Please try again.");
+                  setHcaptchaToken(null);
+                }}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGuestLogin}
+              disabled={loading || !hcaptchaToken}
+              className="w-full gap-2 font-mono"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  Continue as Guest
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Try without signing up. Data will be temporary.
+            </p>
+          </div>
 
           {/* Toggle Sign Up / Login */}
           <div className="mt-6 text-center">
