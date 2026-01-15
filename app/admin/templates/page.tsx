@@ -16,6 +16,7 @@ interface CommunityTemplate {
   university: string;
   course: string;
   semester: string;
+  group: string | null;
   creator_name: string;
   creator_id: string;
   usage_count: number;
@@ -161,6 +162,7 @@ export default function AdminTemplatesPage() {
     template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     template.university?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     template.course?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    template.group?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     template.creator_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -358,6 +360,11 @@ export default function AdminTemplatesPage() {
                     {template.semester && (
                       <span className="text-[10px] px-2 py-0.5 bg-muted rounded-full">
                         {template.semester}
+                      </span>
+                    )}
+                    {template.group && (
+                      <span className="text-[10px] px-2 py-0.5 bg-primary/20 text-primary rounded-full font-semibold">
+                        {template.group}
                       </span>
                     )}
                   </div>
