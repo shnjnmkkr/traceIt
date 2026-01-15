@@ -443,6 +443,13 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
+      // Ensure we're on the last slide (summary card)
+      if (currentSlide !== slides.length - 1) {
+        setCurrentSlide(slides.length - 1);
+        // Wait for slide transition
+        await new Promise(resolve => setTimeout(resolve, 400));
+      }
+
       // Use the actual card element for capture
       if (!cardRef.current) {
         setIsCapturing(false);
