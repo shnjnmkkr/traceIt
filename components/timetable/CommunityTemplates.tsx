@@ -12,6 +12,7 @@ interface CommunityTemplate {
   university: string;
   course: string;
   semester: string;
+  group: string | null;
   creator_name: string;
   creator_id: string;
   usage_count: number;
@@ -122,7 +123,8 @@ export function CommunityTemplates({ onSelectTemplate }: CommunityTemplatesProps
   const filteredTemplates = templates.filter(template =>
     template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     template.university?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    template.course?.toLowerCase().includes(searchQuery.toLowerCase())
+    template.course?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    template.group?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleUse = async (template: CommunityTemplate) => {
@@ -243,6 +245,11 @@ export function CommunityTemplates({ onSelectTemplate }: CommunityTemplatesProps
                   {template.semester && (
                     <span className="text-[10px] px-2 py-0.5 bg-muted rounded-full">
                       {template.semester}
+                    </span>
+                  )}
+                  {template.group && (
+                    <span className="text-[10px] px-2 py-0.5 bg-primary/20 text-primary rounded-full font-semibold">
+                      {template.group}
                     </span>
                   )}
                 </div>

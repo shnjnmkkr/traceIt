@@ -19,6 +19,7 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
     university: "",
     course: "",
     semester: "",
+    group: "",
     creatorName: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,16 +154,36 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
               </div>
               <div>
                 <label className="block text-sm font-mono font-semibold mb-2">
-                  Your Name (Optional)
+                  Group
                 </label>
-                <input
-                  type="text"
-                  value={formData.creatorName}
-                  onChange={(e) => setFormData({ ...formData, creatorName: e.target.value })}
-                  placeholder="Anonymous"
+                <select
+                  value={formData.group}
+                  onChange={(e) => setFormData({ ...formData, group: e.target.value })}
                   className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
-                />
+                >
+                  <option value="">Select Group</option>
+                  <option value="P1">P1</option>
+                  <option value="P2">P2</option>
+                  <option value="P3">P3</option>
+                  <option value="P4">P4</option>
+                  <option value="P5">P5</option>
+                  <option value="P6">P6</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-mono font-semibold mb-2">
+                Your Name (Optional)
+              </label>
+              <input
+                type="text"
+                value={formData.creatorName}
+                onChange={(e) => setFormData({ ...formData, creatorName: e.target.value })}
+                placeholder="Anonymous"
+                className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
+              />
             </div>
 
             {/* Buttons */}
