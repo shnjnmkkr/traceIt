@@ -443,125 +443,19 @@ export function AttendanceWrapped({
     try {
       setIsCapturing(true);
       
-      // Create a simple, reliable static card for capture
-      const staticCard = document.createElement('div');
-      staticCard.style.position = 'fixed';
-      staticCard.style.left = '-9999px';
-      staticCard.style.top = '0';
-      staticCard.style.width = '400px';
-      staticCard.style.height = '600px';
-      staticCard.style.background = '#0f172a';
-      staticCard.style.borderRadius = '16px';
-      staticCard.style.padding = '32px 24px';
-      staticCard.style.color = '#ffffff';
-      staticCard.style.fontFamily = 'system-ui, -apple-system, sans-serif';
-      staticCard.style.boxSizing = 'border-box';
-      
-      // Simple, reliable HTML structure
-      staticCard.innerHTML = `
-        <div style="text-align: center; margin-bottom: 24px;">
-          <p style="font-size: 14px; font-weight: 600; margin: 0 0 6px 0; color: rgba(255,255,255,0.9);">${displayName}'s</p>
-          <h2 style="font-size: 22px; font-weight: bold; margin: 0 0 6px 0; color: #ffffff;">${new Date().getFullYear()} Summary</h2>
-          <p style="font-size: 12px; margin: 0 0 4px 0; color: rgba(255,255,255,0.7);">${semesterName}</p>
-          <p style="font-size: 10px; margin: 0; color: rgba(255,255,255,0.5);">
-            ${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-          </p>
-        </div>
-        
-        <div style="background: rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.15);">
-          <div style="text-align: center; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.15);">
-            <p style="font-size: 11px; margin: 0 0 8px 0; color: rgba(255,255,255,0.7);">Overall Attendance</p>
-            <p style="font-size: 56px; font-weight: 900; margin: 0; line-height: 1; color: #ffffff;">${overallPercentage}%</p>
-            <p style="font-size: 11px; margin: 8px 0 0 0; color: rgba(255,255,255,0.6);">${totalAttended} of ${totalClasses} classes</p>
-          </div>
+      // Use the actual card element for capture
+      if (!cardRef.current) {
+        setIsCapturing(false);
+        return;
+      }
 
-          <div style="display: table; width: 100%; margin-bottom: 20px;">
-            <div style="display: table-row;">
-              <div style="display: table-cell; text-align: center; width: 33.33%; padding: 0 4px;">
-                <div style="background: rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 12px 8px;">
-                  <p style="font-size: 24px; font-weight: bold; margin: 0 0 4px 0; color: #86efac;">${totalAttended}</p>
-                  <p style="font-size: 10px; margin: 0; color: rgba(255,255,255,0.7);">Attended</p>
-                </div>
-              </div>
-              <div style="display: table-cell; text-align: center; width: 33.33%; padding: 0 4px;">
-                <div style="background: rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 12px 8px;">
-                  <p style="font-size: 24px; font-weight: bold; margin: 0 0 4px 0; color: #fca5a5;">${totalBunked}</p>
-                  <p style="font-size: 10px; margin: 0; color: rgba(255,255,255,0.7);">Bunked</p>
-                </div>
-              </div>
-              <div style="display: table-cell; text-align: center; width: 33.33%; padding: 0 4px;">
-                <div style="background: rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 12px 8px;">
-                  <p style="font-size: 24px; font-weight: bold; margin: 0 0 4px 0; color: #c4b5fd;">${subjects.length}</p>
-                  <p style="font-size: 10px; margin: 0; color: rgba(255,255,255,0.7);">Subjects</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.15);">
-            <div style="background: rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 12px; margin-bottom: 8px;">
-              <div style="display: table; width: 100%;">
-                <div style="display: table-cell; vertical-align: middle;">
-                  <p style="font-size: 10px; margin: 0 0 4px 0; color: rgba(255,255,255,0.7);">Best Performance</p>
-                  <p style="font-size: 13px; font-weight: 500; margin: 0; color: #ffffff;">${bestSubject.name}</p>
-                </div>
-                <div style="display: table-cell; vertical-align: middle; text-align: right; width: 60px;">
-                  <p style="font-size: 14px; font-weight: 600; margin: 0; color: #86efac;">${bestSubject.percentage}%</p>
-                </div>
-              </div>
-            </div>
-            <div style="background: rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 12px;">
-              <div style="display: table; width: 100%;">
-                <div style="display: table-cell; vertical-align: middle;">
-                  <p style="font-size: 10px; margin: 0 0 4px 0; color: rgba(255,255,255,0.7);">Needs Attention</p>
-                  <p style="font-size: 13px; font-weight: 500; margin: 0; color: #ffffff;">${worstSubject.name}</p>
-                </div>
-                <div style="display: table-cell; vertical-align: middle; text-align: right; width: 60px;">
-                  <p style="font-size: 14px; font-weight: 600; margin: 0; color: #fdba74;">${worstSubject.percentage}%</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style="display: table; width: 100%;">
-            <div style="display: table-row;">
-              <div style="display: table-cell; text-align: center; width: 50%; padding: 0 4px;">
-                <div style="background: rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 12px 8px;">
-                  <p style="font-size: 20px; font-weight: bold; margin: 0 0 4px 0; color: #ffffff;">${Math.round((totalAttended/totalClasses) * 100)}%</p>
-                  <p style="font-size: 10px; margin: 0; color: rgba(255,255,255,0.7);">Attendance Rate</p>
-                </div>
-              </div>
-              <div style="display: table-cell; text-align: center; width: 50%; padding: 0 4px;">
-                <div style="background: rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 12px 8px;">
-                  <p style="font-size: 20px; font-weight: bold; margin: 0 0 4px 0; color: #ffffff;">${totalClasses - totalAttended}</p>
-                  <p style="font-size: 10px; margin: 0; color: rgba(255,255,255,0.7);">Classes Missed</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <p style="font-size: 10px; margin-top: 20px; text-align: center; color: rgba(255,255,255,0.5);">
-          Tracked with traceIt
-        </p>
-      `;
-      
-      document.body.appendChild(staticCard);
-      
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 400));
-      
-      const canvas = await html2canvas(staticCard, {
-        backgroundColor: '#0f172a',
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: null,
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        width: 400,
-        height: 600,
       });
-
-      document.body.removeChild(staticCard);
 
       canvas.toBlob(async (blob) => {
         setIsCapturing(false);
