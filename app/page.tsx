@@ -3,13 +3,27 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 export default function HomePage() {
   const router = useRouter();
+  const supabase = createClient();
 
   useEffect(() => {
-    router.push("/auth/login");
-  }, [router]);
+    const checkAuthAndRedirect = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // User is logged in, redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        // User is not logged in, redirect to login
+        router.push("/auth/login");
+      }
+    };
+
+    checkAuthAndRedirect();
+  }, [router, supabase]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
