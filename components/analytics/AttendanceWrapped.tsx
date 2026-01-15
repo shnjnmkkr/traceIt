@@ -304,49 +304,110 @@ export function AttendanceWrapped({
   ];
 
   const handleDownload = async () => {
-    if (!cardRef.current) return;
-
     try {
       setIsCapturing(true);
       
-      // Ensure we're on the summary slide
-      if (currentSlide !== slides.length - 1) {
-        setCurrentSlide(slides.length - 1);
-        await new Promise(resolve => setTimeout(resolve, 400));
-      }
+      // Create a hidden static version of the card for capture
+      const staticCard = document.createElement('div');
+      staticCard.style.position = 'fixed';
+      staticCard.style.left = '-9999px';
+      staticCard.style.top = '0';
+      staticCard.style.width = '400px';
+      staticCard.style.height = '711px'; // 9:16 aspect ratio
+      staticCard.style.background = 'linear-gradient(to bottom right, #7c3aed, #9333ea, #dc2626)';
+      staticCard.style.borderRadius = '16px';
+      staticCard.style.padding = '24px';
+      staticCard.style.color = 'white';
+      staticCard.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+      staticCard.style.display = 'flex';
+      staticCard.style.flexDirection = 'column';
+      staticCard.style.justifyContent = 'center';
+      staticCard.style.alignItems = 'center';
+      staticCard.style.overflow = 'hidden';
       
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Force a reflow
-      if (cardRef.current) {
-        cardRef.current.offsetHeight;
-      }
+      // Build the static HTML content
+      staticCard.innerHTML = `
+        <div style="text-align: center; margin-bottom: 16px; width: 100%;">
+          <p style="font-size: 14px; font-weight: 600; margin-bottom: 4px; opacity: 0.9;">${displayName}'s</p>
+          <h2 style="font-size: 24px; font-weight: bold; margin: 0;">${new Date().getFullYear()} Summary</h2>
+          <p style="font-size: 12px; opacity: 0.7; margin-top: 4px;">${semesterName}</p>
+          <p style="font-size: 10px; opacity: 0.5; margin-top: 2px;">
+            ${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
+        
+        <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 16px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.2); width: 100%; max-width: 352px;">
+          <div style="text-align: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+            <p style="font-size: 12px; opacity: 0.7; margin-bottom: 4px;">Overall Attendance</p>
+            <p style="font-size: 48px; font-weight: 900; margin: 0;">${overallPercentage}%</p>
+            <p style="font-size: 10px; opacity: 0.6; margin-top: 4px;">${totalAttended} of ${totalClasses} classes</p>
+          </div>
 
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#1a1a1a',
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 20px; font-weight: bold; color: #86efac; margin: 0;">${totalAttended}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Attended</p>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 20px; font-weight: bold; color: #fca5a5; margin: 0;">${totalBunked}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Bunked</p>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 20px; font-weight: bold; color: #c4b5fd; margin: 0;">${subjects.length}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Subjects</p>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 10px; opacity: 0.7;">Best Performance</span>
+                <span style="font-size: 12px; font-weight: 600; color: #86efac;">${bestSubject.percentage}%</span>
+              </div>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${bestSubject.name}</p>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 10px; opacity: 0.7;">Needs Attention</span>
+                <span style="font-size: 12px; font-weight: 600; color: #fdba74;">${worstSubject.percentage}%</span>
+              </div>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${worstSubject.name}</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 18px; font-weight: bold; margin: 0;">${Math.round((totalAttended/totalClasses) * 100)}%</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Attendance Rate</p>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 18px; font-weight: bold; margin: 0;">${totalClasses - totalAttended}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Classes Missed</p>
+            </div>
+          </div>
+        </div>
+
+        <p style="font-size: 10px; margin-top: 16px; text-align: center; width: 100%; opacity: 0.5;">
+          Tracked with traceIt
+        </p>
+      `;
+      
+      document.body.appendChild(staticCard);
+      
+      // Wait for fonts and rendering
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const canvas = await html2canvas(staticCard, {
+        backgroundColor: null,
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        onclone: (clonedDoc) => {
-          // Fix the absolute positioned slide
-          const clonedCard = clonedDoc.querySelector('[data-card-ref]') as HTMLElement;
-          if (clonedCard) {
-            const motionDiv = clonedCard.querySelector('div[style*="position"]') as HTMLElement;
-            if (motionDiv) {
-              motionDiv.style.position = 'absolute';
-              motionDiv.style.top = '0';
-              motionDiv.style.left = '0';
-              motionDiv.style.right = '0';
-              motionDiv.style.bottom = '0';
-              motionDiv.style.transform = 'none';
-              motionDiv.style.opacity = '1';
-              motionDiv.style.visibility = 'visible';
-            }
-          }
-        },
+        width: 400,
+        height: 711,
       });
+
+      document.body.removeChild(staticCard);
 
       const link = document.createElement("a");
       link.download = `traceIt-${displayName}-attendance-${new Date().getFullYear()}.png`;
@@ -361,49 +422,110 @@ export function AttendanceWrapped({
   };
 
   const handleShare = async () => {
-    if (!cardRef.current) return;
-
     try {
       setIsCapturing(true);
       
-      // Ensure we're on the summary slide
-      if (currentSlide !== slides.length - 1) {
-        setCurrentSlide(slides.length - 1);
-        await new Promise(resolve => setTimeout(resolve, 400));
-      }
+      // Create a hidden static version of the card for capture
+      const staticCard = document.createElement('div');
+      staticCard.style.position = 'fixed';
+      staticCard.style.left = '-9999px';
+      staticCard.style.top = '0';
+      staticCard.style.width = '400px';
+      staticCard.style.height = '711px'; // 9:16 aspect ratio
+      staticCard.style.background = 'linear-gradient(to bottom right, #7c3aed, #9333ea, #dc2626)';
+      staticCard.style.borderRadius = '16px';
+      staticCard.style.padding = '24px';
+      staticCard.style.color = 'white';
+      staticCard.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+      staticCard.style.display = 'flex';
+      staticCard.style.flexDirection = 'column';
+      staticCard.style.justifyContent = 'center';
+      staticCard.style.alignItems = 'center';
+      staticCard.style.overflow = 'hidden';
       
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      // Force a reflow
-      if (cardRef.current) {
-        cardRef.current.offsetHeight;
-      }
+      // Build the static HTML content
+      staticCard.innerHTML = `
+        <div style="text-align: center; margin-bottom: 16px; width: 100%;">
+          <p style="font-size: 14px; font-weight: 600; margin-bottom: 4px; opacity: 0.9;">${displayName}'s</p>
+          <h2 style="font-size: 24px; font-weight: bold; margin: 0;">${new Date().getFullYear()} Summary</h2>
+          <p style="font-size: 12px; opacity: 0.7; margin-top: 4px;">${semesterName}</p>
+          <p style="font-size: 10px; opacity: 0.5; margin-top: 2px;">
+            ${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
+        
+        <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 16px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.2); width: 100%; max-width: 352px;">
+          <div style="text-align: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+            <p style="font-size: 12px; opacity: 0.7; margin-bottom: 4px;">Overall Attendance</p>
+            <p style="font-size: 48px; font-weight: 900; margin: 0;">${overallPercentage}%</p>
+            <p style="font-size: 10px; opacity: 0.6; margin-top: 4px;">${totalAttended} of ${totalClasses} classes</p>
+          </div>
 
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#1a1a1a',
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 20px; font-weight: bold; color: #86efac; margin: 0;">${totalAttended}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Attended</p>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 20px; font-weight: bold; color: #fca5a5; margin: 0;">${totalBunked}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Bunked</p>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 20px; font-weight: bold; color: #c4b5fd; margin: 0;">${subjects.length}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Subjects</p>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 10px; opacity: 0.7;">Best Performance</span>
+                <span style="font-size: 12px; font-weight: 600; color: #86efac;">${bestSubject.percentage}%</span>
+              </div>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${bestSubject.name}</p>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 10px; opacity: 0.7;">Needs Attention</span>
+                <span style="font-size: 12px; font-weight: 600; color: #fdba74;">${worstSubject.percentage}%</span>
+              </div>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${worstSubject.name}</p>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 18px; font-weight: bold; margin: 0;">${Math.round((totalAttended/totalClasses) * 100)}%</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Attendance Rate</p>
+            </div>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+              <p style="font-size: 18px; font-weight: bold; margin: 0;">${totalClasses - totalAttended}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Classes Missed</p>
+            </div>
+          </div>
+        </div>
+
+        <p style="font-size: 10px; margin-top: 16px; text-align: center; width: 100%; opacity: 0.5;">
+          Tracked with traceIt
+        </p>
+      `;
+      
+      document.body.appendChild(staticCard);
+      
+      // Wait for fonts and rendering
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const canvas = await html2canvas(staticCard, {
+        backgroundColor: null,
         scale: 2,
         logging: false,
         useCORS: true,
         allowTaint: true,
-        onclone: (clonedDoc) => {
-          // Fix the absolute positioned slide
-          const clonedCard = clonedDoc.querySelector('[data-card-ref]') as HTMLElement;
-          if (clonedCard) {
-            const motionDiv = clonedCard.querySelector('div[style*="position"]') as HTMLElement;
-            if (motionDiv) {
-              motionDiv.style.position = 'absolute';
-              motionDiv.style.top = '0';
-              motionDiv.style.left = '0';
-              motionDiv.style.right = '0';
-              motionDiv.style.bottom = '0';
-              motionDiv.style.transform = 'none';
-              motionDiv.style.opacity = '1';
-              motionDiv.style.visibility = 'visible';
-            }
-          }
-        },
+        width: 400,
+        height: 711,
       });
+
+      document.body.removeChild(staticCard);
 
       canvas.toBlob(async (blob) => {
         setIsCapturing(false);
