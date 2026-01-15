@@ -103,6 +103,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // Type guard: guestData is guaranteed to have user and session at this point
+    if (!guestData || !guestData.user || !guestData.session) {
+      console.error('Guest login: Unexpected null values after successful creation');
+      return NextResponse.json(
+        { error: 'Failed to create guest session' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({ 
       user: {
         id: guestData.user.id,
