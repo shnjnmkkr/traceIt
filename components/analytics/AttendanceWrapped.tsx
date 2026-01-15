@@ -338,10 +338,10 @@ export function AttendanceWrapped({
         </div>
         
         <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 16px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.2); width: 100%; max-width: 352px; box-sizing: border-box;">
-          <div style="text-align: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+          <div style="text-align: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); display: flex; flex-direction: column; align-items: center;">
             <p style="font-size: 12px; opacity: 0.7; margin: 0 0 4px 0;">Overall Attendance</p>
-            <p style="font-size: 48px; font-weight: 900; margin: 0; line-height: 1;">${overallPercentage}%</p>
-            <p style="font-size: 10px; opacity: 0.6; margin: 4px 0 0 0;">${totalAttended} of ${totalClasses} classes</p>
+            <p style="font-size: 48px; font-weight: 900; margin: 0; line-height: 1; text-align: center;">${overallPercentage}%</p>
+            <p style="font-size: 10px; opacity: 0.6; margin: 4px 0 0 0; text-align: center;">${totalAttended} of ${totalClasses} classes</p>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
@@ -360,19 +360,19 @@ export function AttendanceWrapped({
           </div>
 
           <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
-            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; margin-bottom: 8px; box-sizing: border-box;">
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; margin-bottom: 8px; box-sizing: border-box; text-align: center;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 10px; opacity: 0.7;">Best Performance</span>
-                <span style="font-size: 12px; font-weight: 600; color: #86efac;">${bestSubject.percentage}%</span>
+                <span style="font-size: 10px; opacity: 0.7; flex: 1; text-align: left;">Best Performance</span>
+                <span style="font-size: 12px; font-weight: 600; color: #86efac; flex: 0 0 auto; text-align: right;">${bestSubject.percentage}%</span>
               </div>
-              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3;">${bestSubject.name}</p>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3; text-align: center;">${bestSubject.name}</p>
             </div>
-            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; box-sizing: border-box;">
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; box-sizing: border-box; text-align: center;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 10px; opacity: 0.7;">Needs Attention</span>
-                <span style="font-size: 12px; font-weight: 600; color: #fdba74;">${worstSubject.percentage}%</span>
+                <span style="font-size: 10px; opacity: 0.7; flex: 1; text-align: left;">Needs Attention</span>
+                <span style="font-size: 12px; font-weight: 600; color: #fdba74; flex: 0 0 auto; text-align: right;">${worstSubject.percentage}%</span>
               </div>
-              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3;">${worstSubject.name}</p>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3; text-align: center;">${worstSubject.name}</p>
             </div>
           </div>
 
@@ -457,10 +457,10 @@ export function AttendanceWrapped({
         </div>
         
         <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 16px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.2); width: 100%; max-width: 352px; box-sizing: border-box;">
-          <div style="text-align: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+          <div style="text-align: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); display: flex; flex-direction: column; align-items: center;">
             <p style="font-size: 12px; opacity: 0.7; margin: 0 0 4px 0;">Overall Attendance</p>
-            <p style="font-size: 48px; font-weight: 900; margin: 0; line-height: 1;">${overallPercentage}%</p>
-            <p style="font-size: 10px; opacity: 0.6; margin: 4px 0 0 0;">${totalAttended} of ${totalClasses} classes</p>
+            <p style="font-size: 48px; font-weight: 900; margin: 0; line-height: 1; text-align: center;">${overallPercentage}%</p>
+            <p style="font-size: 10px; opacity: 0.6; margin: 4px 0 0 0; text-align: center;">${totalAttended} of ${totalClasses} classes</p>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
@@ -479,19 +479,19 @@ export function AttendanceWrapped({
           </div>
 
           <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
-            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; margin-bottom: 8px; box-sizing: border-box;">
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; margin-bottom: 8px; box-sizing: border-box; text-align: center;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 10px; opacity: 0.7;">Best Performance</span>
-                <span style="font-size: 12px; font-weight: 600; color: #86efac;">${bestSubject.percentage}%</span>
+                <span style="font-size: 10px; opacity: 0.7; flex: 1; text-align: left;">Best Performance</span>
+                <span style="font-size: 12px; font-weight: 600; color: #86efac; flex: 0 0 auto; text-align: right;">${bestSubject.percentage}%</span>
               </div>
-              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3;">${bestSubject.name}</p>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3; text-align: center;">${bestSubject.name}</p>
             </div>
-            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; box-sizing: border-box;">
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; box-sizing: border-box; text-align: center;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 10px; opacity: 0.7;">Needs Attention</span>
-                <span style="font-size: 12px; font-weight: 600; color: #fdba74;">${worstSubject.percentage}%</span>
+                <span style="font-size: 10px; opacity: 0.7; flex: 1; text-align: left;">Needs Attention</span>
+                <span style="font-size: 12px; font-weight: 600; color: #fdba74; flex: 0 0 auto; text-align: right;">${worstSubject.percentage}%</span>
               </div>
-              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3;">${worstSubject.name}</p>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3; text-align: center;">${worstSubject.name}</p>
             </div>
           </div>
 
