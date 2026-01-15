@@ -433,9 +433,10 @@ export function AttendanceWrapped({
       staticCard.style.top = '0';
       staticCard.style.width = '400px';
       staticCard.style.height = '711px'; // 9:16 aspect ratio
-      staticCard.style.background = 'linear-gradient(to bottom right, #7c3aed, #9333ea, #dc2626)';
+      // Match the actual card gradient: from-slate-900 via-purple-900 to-slate-900
+      staticCard.style.background = 'linear-gradient(to bottom, #0f172a, #581c87, #0f172a)';
       staticCard.style.borderRadius = '16px';
-      staticCard.style.padding = '24px';
+      staticCard.style.padding = '24px 16px';
       staticCard.style.color = 'white';
       staticCard.style.fontFamily = 'system-ui, -apple-system, sans-serif';
       staticCard.style.display = 'flex';
@@ -446,67 +447,67 @@ export function AttendanceWrapped({
       
       // Build the static HTML content
       staticCard.innerHTML = `
-        <div style="text-align: center; margin-bottom: 16px; width: 100%;">
-          <p style="font-size: 14px; font-weight: 600; margin-bottom: 4px; opacity: 0.9;">${displayName}'s</p>
-          <h2 style="font-size: 24px; font-weight: bold; margin: 0;">${new Date().getFullYear()} Summary</h2>
-          <p style="font-size: 12px; opacity: 0.7; margin-top: 4px;">${semesterName}</p>
-          <p style="font-size: 10px; opacity: 0.5; margin-top: 2px;">
+        <div style="text-align: center; margin-bottom: 16px; width: 100%; padding: 0 8px;">
+          <p style="font-size: 14px; font-weight: 600; margin: 0 0 4px 0; opacity: 0.9;">${displayName}'s</p>
+          <h2 style="font-size: 20px; font-weight: bold; margin: 0 0 4px 0;">${new Date().getFullYear()} Summary</h2>
+          <p style="font-size: 12px; opacity: 0.7; margin: 4px 0 2px 0;">${semesterName}</p>
+          <p style="font-size: 10px; opacity: 0.5; margin: 2px 0 0 0;">
             ${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </p>
         </div>
         
-        <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 16px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.2); width: 100%; max-width: 352px;">
+        <div style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border-radius: 16px; padding: 16px; border: 1px solid rgba(255, 255, 255, 0.2); width: 100%; max-width: 352px; box-sizing: border-box;">
           <div style="text-align: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
-            <p style="font-size: 12px; opacity: 0.7; margin-bottom: 4px;">Overall Attendance</p>
-            <p style="font-size: 48px; font-weight: 900; margin: 0;">${overallPercentage}%</p>
-            <p style="font-size: 10px; opacity: 0.6; margin-top: 4px;">${totalAttended} of ${totalClasses} classes</p>
+            <p style="font-size: 12px; opacity: 0.7; margin: 0 0 4px 0;">Overall Attendance</p>
+            <p style="font-size: 48px; font-weight: 900; margin: 0; line-height: 1;">${overallPercentage}%</p>
+            <p style="font-size: 10px; opacity: 0.6; margin: 4px 0 0 0;">${totalAttended} of ${totalClasses} classes</p>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
-              <p style="font-size: 20px; font-weight: bold; color: #86efac; margin: 0;">${totalAttended}</p>
-              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Attended</p>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <p style="font-size: 20px; font-weight: bold; color: #86efac; margin: 0; line-height: 1.2;">${totalAttended}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin: 4px 0 0 0;">Attended</p>
             </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
-              <p style="font-size: 20px; font-weight: bold; color: #fca5a5; margin: 0;">${totalBunked}</p>
-              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Bunked</p>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <p style="font-size: 20px; font-weight: bold; color: #fca5a5; margin: 0; line-height: 1.2;">${totalBunked}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin: 4px 0 0 0;">Bunked</p>
             </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
-              <p style="font-size: 20px; font-weight: bold; color: #c4b5fd; margin: 0;">${subjects.length}</p>
-              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Subjects</p>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <p style="font-size: 20px; font-weight: bold; color: #c4b5fd; margin: 0; line-height: 1.2;">${subjects.length}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin: 4px 0 0 0;">Subjects</p>
             </div>
           </div>
 
           <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
-            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; margin-bottom: 8px;">
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; margin-bottom: 8px; box-sizing: border-box;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                 <span style="font-size: 10px; opacity: 0.7;">Best Performance</span>
                 <span style="font-size: 12px; font-weight: 600; color: #86efac;">${bestSubject.percentage}%</span>
               </div>
-              <p style="font-size: 12px; font-weight: 500; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${bestSubject.name}</p>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3;">${bestSubject.name}</p>
             </div>
-            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
+            <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; box-sizing: border-box;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                 <span style="font-size: 10px; opacity: 0.7;">Needs Attention</span>
                 <span style="font-size: 12px; font-weight: 600; color: #fdba74;">${worstSubject.percentage}%</span>
               </div>
-              <p style="font-size: 12px; font-weight: 500; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${worstSubject.name}</p>
+              <p style="font-size: 12px; font-weight: 500; margin: 0; word-break: break-word; overflow-wrap: break-word; line-height: 1.3;">${worstSubject.name}</p>
             </div>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;">
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
-              <p style="font-size: 18px; font-weight: bold; margin: 0;">${Math.round((totalAttended/totalClasses) * 100)}%</p>
-              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Attendance Rate</p>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <p style="font-size: 18px; font-weight: bold; margin: 0; line-height: 1.2;">${Math.round((totalAttended/totalClasses) * 100)}%</p>
+              <p style="font-size: 10px; opacity: 0.7; margin: 4px 0 0 0;">Attendance Rate</p>
             </div>
-            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px;">
-              <p style="font-size: 18px; font-weight: bold; margin: 0;">${totalClasses - totalAttended}</p>
-              <p style="font-size: 10px; opacity: 0.7; margin-top: 4px;">Classes Missed</p>
+            <div style="text-align: center; background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <p style="font-size: 18px; font-weight: bold; margin: 0; line-height: 1.2;">${totalClasses - totalAttended}</p>
+              <p style="font-size: 10px; opacity: 0.7; margin: 4px 0 0 0;">Classes Missed</p>
             </div>
           </div>
         </div>
 
-        <p style="font-size: 10px; margin-top: 16px; text-align: center; width: 100%; opacity: 0.5;">
+        <p style="font-size: 10px; margin-top: 16px; text-align: center; width: 100%; opacity: 0.5; padding: 0 8px;">
           Tracked with traceIt
         </p>
       `;
