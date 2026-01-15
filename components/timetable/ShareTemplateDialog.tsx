@@ -159,16 +159,12 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
                 <select
                   value={formData.group}
                   onChange={(e) => setFormData({ ...formData, group: e.target.value })}
-                  className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
+                  className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border appearance-none cursor-pointer"
                 >
                   <option value="">Select Group</option>
                   <option value="P1">P1</option>
                   <option value="P2">P2</option>
                   <option value="P3">P3</option>
-                  <option value="P4">P4</option>
-                  <option value="P5">P5</option>
-                  <option value="P6">P6</option>
-                  <option value="Other">Other</option>
                 </select>
               </div>
             </div>
