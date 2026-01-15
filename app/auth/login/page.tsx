@@ -306,24 +306,12 @@ export default function LoginPage() {
           </Button>
 
           {/* Guest Login */}
-          <div className="mt-4 space-y-3">
-            <div className="flex justify-center">
-              <HCaptcha
-                ref={hcaptchaRef}
-                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || ''}
-                onVerify={(token) => setHcaptchaToken(token)}
-                onExpire={() => setHcaptchaToken(null)}
-                onError={() => {
-                  setError("hCaptcha error. Please try again.");
-                  setHcaptchaToken(null);
-                }}
-              />
-            </div>
+          <div className="mt-4">
             <Button
               type="button"
               variant="outline"
               onClick={handleGuestLogin}
-              disabled={loading || !hcaptchaToken}
+              disabled={loading}
               className="w-full gap-2 font-mono"
             >
               {loading ? (
@@ -337,7 +325,7 @@ export default function LoginPage() {
                 </>
               )}
             </Button>
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs text-muted-foreground text-center mt-2">
               Try without signing up. Data will be temporary.
             </p>
           </div>
