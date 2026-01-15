@@ -51,36 +51,36 @@ export function AttendanceWrapped({
   const slides = [
     {
       gradient: "from-purple-600 via-pink-600 to-red-600",
-      content: (
+      content: (isCapturing: boolean) => (
         <div className="flex flex-col items-center justify-center h-full text-white px-8">
           <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            initial={isCapturing ? false : { scale: 0, rotate: -180 }}
+            animate={isCapturing ? false : { scale: 1, rotate: 0 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.2, type: "spring", stiffness: 200 }}
             className="mb-8"
           >
             <Sparkles className="w-24 h-24" />
           </motion.div>
           <motion.h1
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, type: "spring" }}
+            initial={isCapturing ? false : { opacity: 0, y: 50 }}
+            animate={isCapturing ? false : { opacity: 1, y: 0 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.5, type: "spring" }}
             className="text-5xl font-bold mb-4 text-center"
           >
             Your {new Date().getFullYear()}
           </motion.h1>
           <motion.h2
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.7, type: "spring" }}
+            initial={isCapturing ? false : { opacity: 0, scale: 0.5 }}
+            animate={isCapturing ? false : { opacity: 1, scale: 1 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.7, type: "spring" }}
             className="text-6xl font-black text-center leading-tight"
           >
             Attendance Wrapped
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 0.8, y: 0 }}
-            transition={{ delay: 0.9 }}
+            initial={isCapturing ? false : { opacity: 0, y: 20 }}
+            animate={isCapturing ? false : { opacity: 0.8, y: 0 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.9 }}
             className="text-lg mt-8 font-medium"
           >
             {semesterName}
@@ -90,42 +90,42 @@ export function AttendanceWrapped({
     },
     {
       gradient: "from-blue-600 via-cyan-600 to-teal-600",
-      content: (
+      content: (isCapturing: boolean) => (
         <div className="flex flex-col items-center justify-center h-full text-white px-8">
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3, type: "spring", stiffness: 150 }}
+            initial={isCapturing ? false : { scale: 0, opacity: 0 }}
+            animate={isCapturing ? false : { scale: 1, opacity: 1 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.3, type: "spring", stiffness: 150 }}
             className="relative"
           >
             <div className="text-7xl font-black mb-6 relative">
               <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
+                initial={isCapturing ? false : { opacity: 0 }}
+                animate={isCapturing ? false : { opacity: 1 }}
+                transition={isCapturing ? { duration: 0 } : { delay: 0.6 }}
               >
                 {overallPercentage}%
               </motion.span>
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: "100%" }}
-                transition={{ delay: 0.5, duration: 0.8 }}
+                initial={isCapturing ? false : { width: 0 }}
+                animate={isCapturing ? false : { width: "100%" }}
+                transition={isCapturing ? { duration: 0 } : { delay: 0.5, duration: 0.8 }}
                 className="absolute bottom-0 left-0 h-2 bg-white/30 rounded-full"
               />
             </div>
           </motion.div>
           <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
+            initial={isCapturing ? false : { opacity: 0, y: 30 }}
+            animate={isCapturing ? false : { opacity: 1, y: 0 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.8 }}
             className="text-3xl font-bold text-center mb-4"
           >
             Overall Attendance
           </motion.p>
           <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.8 }}
-            transition={{ delay: 1 }}
+            initial={isCapturing ? false : { opacity: 0 }}
+            animate={isCapturing ? false : { opacity: 0.8 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 1 }}
             className="text-xl text-center"
           >
             {totalAttended} / {totalClasses} classes attended
@@ -135,42 +135,42 @@ export function AttendanceWrapped({
     },
     {
       gradient: "from-green-600 via-emerald-600 to-teal-600",
-      content: (
+      content: (isCapturing: boolean) => (
         <div className="flex flex-col items-center justify-center h-full text-white px-8">
           <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, type: "spring" }}
+            initial={isCapturing ? false : { opacity: 0, y: -50 }}
+            animate={isCapturing ? false : { opacity: 1, y: 0 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.3, type: "spring" }}
             className="mb-10 text-center"
           >
             <h2 className="text-4xl font-bold">Best Performance</h2>
           </motion.div>
           <motion.div
-            initial={{ opacity: 0, scale: 0.5, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.5, type: "spring", stiffness: 150 }}
+            initial={isCapturing ? false : { opacity: 0, scale: 0.5, y: 50 }}
+            animate={isCapturing ? false : { opacity: 1, scale: 1, y: 0 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.5, type: "spring", stiffness: 150 }}
             className="text-center bg-white/10 backdrop-blur-sm rounded-3xl p-8 border-2 border-white/20"
           >
             <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
+              initial={isCapturing ? false : { opacity: 0 }}
+              animate={isCapturing ? false : { opacity: 1 }}
+              transition={isCapturing ? { duration: 0 } : { delay: 0.7 }}
               className="text-4xl font-black mb-4"
             >
               {bestSubject.name}
             </motion.p>
             <motion.p
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.9, type: "spring" }}
+              initial={isCapturing ? false : { scale: 0 }}
+              animate={isCapturing ? false : { scale: 1 }}
+              transition={isCapturing ? { duration: 0 } : { delay: 0.9, type: "spring" }}
               className="text-7xl font-black text-green-300"
             >
               {bestSubject.percentage}%
             </motion.p>
             <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.9 }}
-              transition={{ delay: 1.1 }}
+              initial={isCapturing ? false : { opacity: 0 }}
+              animate={isCapturing ? false : { opacity: 0.9 }}
+              transition={isCapturing ? { duration: 0 } : { delay: 1.1 }}
               className="text-lg mt-6"
             >
               {bestSubject.attended} / {bestSubject.total} classes
@@ -181,42 +181,42 @@ export function AttendanceWrapped({
     },
     {
       gradient: "from-orange-600 via-red-600 to-pink-600",
-      content: (
+      content: (isCapturing: boolean) => (
         <div className="flex flex-col items-center justify-center h-full text-white px-8">
           <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, type: "spring" }}
+            initial={isCapturing ? false : { opacity: 0, y: -50 }}
+            animate={isCapturing ? false : { opacity: 1, y: 0 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.3, type: "spring" }}
             className="mb-10 text-center"
           >
             <h2 className="text-4xl font-bold">Needs Attention</h2>
           </motion.div>
           <motion.div
-            initial={{ opacity: 0, scale: 0.5, y: 50 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.5, type: "spring", stiffness: 150 }}
+            initial={isCapturing ? false : { opacity: 0, scale: 0.5, y: 50 }}
+            animate={isCapturing ? false : { opacity: 1, scale: 1, y: 0 }}
+            transition={isCapturing ? { duration: 0 } : { delay: 0.5, type: "spring", stiffness: 150 }}
             className="text-center bg-white/10 backdrop-blur-sm rounded-3xl p-8 border-2 border-white/20"
           >
             <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
+              initial={isCapturing ? false : { opacity: 0 }}
+              animate={isCapturing ? false : { opacity: 1 }}
+              transition={isCapturing ? { duration: 0 } : { delay: 0.7 }}
               className="text-4xl font-black mb-4"
             >
               {worstSubject.name}
             </motion.p>
             <motion.p
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.9, type: "spring" }}
+              initial={isCapturing ? false : { scale: 0 }}
+              animate={isCapturing ? false : { scale: 1 }}
+              transition={isCapturing ? { duration: 0 } : { delay: 0.9, type: "spring" }}
               className="text-7xl font-black text-orange-300"
             >
               {worstSubject.percentage}%
             </motion.p>
             <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.9 }}
-              transition={{ delay: 1.1 }}
+              initial={isCapturing ? false : { opacity: 0 }}
+              animate={isCapturing ? false : { opacity: 0.9 }}
+              transition={isCapturing ? { duration: 0 } : { delay: 1.1 }}
               className="text-lg mt-6"
             >
               {worstSubject.attended} / {worstSubject.total} classes
@@ -227,7 +227,7 @@ export function AttendanceWrapped({
     },
     {
       gradient: "from-slate-900 via-purple-900 to-slate-900",
-      content: (
+      content: (isCapturing: boolean) => (
         <div className="flex flex-col items-center justify-center h-full w-full text-white px-4 py-6 overflow-hidden">
           <div className="text-center mb-4 w-full">
             <p className="text-sm font-semibold mb-1 text-white/90">
@@ -305,14 +305,18 @@ export function AttendanceWrapped({
 
   const handleDownload = async () => {
     try {
-      setIsCapturing(true);
-      
       // Ensure we're on the last slide (summary card)
       if (currentSlide !== slides.length - 1) {
         setCurrentSlide(slides.length - 1);
         // Wait for slide transition
         await new Promise(resolve => setTimeout(resolve, 400));
       }
+
+      // Freeze Framer Motion animations
+      setIsCapturing(true);
+      
+      // Wait a bit for animations to freeze
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Use the actual card element for capture
       if (!cardRef.current) {
@@ -333,6 +337,7 @@ export function AttendanceWrapped({
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
       
+      // Resume Framer Motion animations
       setIsCapturing(false);
     } catch (error) {
       console.error("Error downloading image:", error);
@@ -342,14 +347,18 @@ export function AttendanceWrapped({
 
   const handleShare = async () => {
     try {
-      setIsCapturing(true);
-      
       // Ensure we're on the last slide (summary card)
       if (currentSlide !== slides.length - 1) {
         setCurrentSlide(slides.length - 1);
         // Wait for slide transition
         await new Promise(resolve => setTimeout(resolve, 400));
       }
+
+      // Freeze Framer Motion animations
+      setIsCapturing(true);
+      
+      // Wait a bit for animations to freeze
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Use the actual card element for capture
       if (!cardRef.current) {
@@ -366,6 +375,7 @@ export function AttendanceWrapped({
       });
 
       canvas.toBlob(async (blob) => {
+        // Resume Framer Motion animations
         setIsCapturing(false);
         
         if (!blob) {
@@ -456,7 +466,9 @@ export function AttendanceWrapped({
               }}
             >
               <div className="h-full w-full overflow-hidden">
-                {slides[currentSlide].content}
+                {typeof slides[currentSlide].content === 'function' 
+                  ? slides[currentSlide].content(isCapturing)
+                  : slides[currentSlide].content}
               </div>
             </motion.div>
           </AnimatePresence>
