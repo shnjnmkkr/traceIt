@@ -18,6 +18,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
+    // Calculate dates for analytics
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
     // Fetch all stats in parallel (using service role for auth.users access)
     // Note: We'll use timetables to estimate user counts since we can't directly query auth.users
     const [
@@ -29,6 +33,17 @@ export async function GET() {
       totalTemplateUsageResult,
       uniqueUsersResult,
       topTemplatesResult,
+      // Analytics data
+      totalPageViewsResult,
+      pageViews7dResult,
+      pageViews30dResult,
+      uniqueVisitors7dResult,
+      uniqueVisitors30dResult,
+      guestPageViewsResult,
+      registeredPageViewsResult,
+      topPagesResult,
+      aiChatUsageResult,
+      timetableCreateUsageResult,
     ] = await Promise.all([
       // Active timetables
       supabase.from('timetables').select('id', { count: 'exact', head: true }).eq('is_active', true),
@@ -40,7 +55,7 @@ export async function GET() {
       supabase.from('community_templates').select('id', { count: 'exact', head: true }).eq('is_public', true),
       
       // Attendance records (last 7 days)
-      supabase.from('attendance_records').select('id', { count: 'exact', head: true }).gte('date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
+      supabase.from('attendance_records').select('id', { count: 'exact', head: true }).gte('date', sevenDaysAgoDate),
       
       // Total attendance records
       supabase.from('attendance_records').select('id', { count: 'exact', head: true }),
@@ -53,6 +68,36 @@ export async function GET() {
       
       // Top templates by usage
       supabase.from('community_templates').select('id, name, usage_count, upvotes, downvotes, university, course').eq('is_public', true).order('usage_count', { ascending: false }).limit(10),
+      
+      // Analytics: Total page views
+      supabase.from('page_views').select('id', { count: 'exact', head: true }),
+      
+      // Analytics: Page views last 7 days
+      supabase.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
+      
+      // Analytics: Page views last 30 days
+      supabase.from('page_views').select('id', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo),
+      
+      // Analytics: Unique visitors last 7 days (by session_id)
+      supabase.from('page_views').select('session_id').gte('created_at', sevenDaysAgo),
+      
+      // Analytics: Unique visitors last 30 days
+      supabase.from('page_views').select('session_id').gte('created_at', thirtyDaysAgo),
+      
+      // Analytics: Guest page views
+      supabase.from('page_views').select('id', { count: 'exact', head: true }).eq('is_guest', true),
+      
+      // Analytics: Registered user page views
+      supabase.from('page_views').select('id', { count: 'exact', head: true }).eq('is_guest', false),
+      
+      // Analytics: Top pages
+      supabase.from('page_views').select('page_path').limit(1000),
+      
+      // Feature usage: AI Chat
+      supabase.from('feature_usage').select('id', { count: 'exact', head: true }).eq('feature_name', 'ai_chat'),
+      
+      // Feature usage: Timetable creation
+      supabase.from('feature_usage').select('id', { count: 'exact', head: true }).eq('feature_name', 'timetable_create'),
     ]);
 
     // Calculate total template usage
@@ -79,9 +124,22 @@ export async function GET() {
       };
     });
 
+    // Calculate unique visitors
+    const uniqueVisitors7d = new Set((uniqueVisitors7dResult.data || []).map((pv: any) => pv.session_id).filter(Boolean)).size;
+    const uniqueVisitors30d = new Set((uniqueVisitors30dResult.data || []).map((pv: any) => pv.session_id).filter(Boolean)).size;
+    
+    // Calculate top pages
+    const pageViewsByPath = new Map<string, number>();
+    (topPagesResult.data || []).forEach((pv: any) => {
+      const path = pv.page_path || 'unknown';
+      pageViewsByPath.set(path, (pageViewsByPath.get(path) || 0) + 1);
+    });
+    const topPages = Array.from(pageViewsByPath.entries())
+      .map(([path, count]) => ({ path, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    
     // Estimate active users (users with recent timetables or attendance)
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     const { data: recentTimetables7d } = await supabase
       .from('timetables')
@@ -135,6 +193,26 @@ export async function GET() {
         attendance: {
           total: totalAttendanceRecordsResult.count || 0,
           records7d: attendanceRecords7dResult.count || 0,
+        },
+        analytics: {
+          pageViews: {
+            total: totalPageViewsResult.count || 0,
+            last7d: pageViews7dResult.count || 0,
+            last30d: pageViews30dResult.count || 0,
+          },
+          visitors: {
+            unique7d: uniqueVisitors7d,
+            unique30d: uniqueVisitors30d,
+          },
+          userTypes: {
+            guest: guestPageViewsResult.count || 0,
+            registered: registeredPageViewsResult.count || 0,
+          },
+          topPages: topPages,
+          features: {
+            aiChat: aiChatUsageResult.count || 0,
+            timetableCreate: timetableCreateUsageResult.count || 0,
+          },
         },
       },
       recentUsers: recentUsers,

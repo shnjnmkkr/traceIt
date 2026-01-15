@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { calculateAttendanceStats } from "@/lib/attendance-calculator";
 import { Timetable, UserSettings } from "@/types";
 import { createClient } from "@/lib/supabase/client";
+import { usePageView, trackFeature } from "@/hooks/useAnalytics";
 
 export default function DashboardPage() {
   const router = useRouter();

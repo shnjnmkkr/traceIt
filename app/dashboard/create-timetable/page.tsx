@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ImageUploadDialog } from "@/components/timetable/ImageUploadDialog";
 import { CommunityTemplates } from "@/components/timetable/CommunityTemplates";
 import { ShareTemplateDialog } from "@/components/timetable/ShareTemplateDialog";
+import { usePageView, trackFeature } from "@/hooks/useAnalytics";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
@@ -29,6 +30,10 @@ interface Slot {
 export default function CreateTimetablePage() {
   const router = useRouter();
   const supabase = createClient();
+  
+  // Track page view
+  usePageView();
+  
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [error, setError] = useState("");
@@ -207,6 +212,12 @@ export default function CreateTimetablePage() {
         const data = await response.json();
         throw new Error(data.error || 'Failed to create timetable');
       }
+
+      // Track timetable creation
+      trackFeature('timetable_create', { 
+        slotCount: slots.length,
+        usedTemplate: usedCommunityTemplate 
+      });
 
       // If they didn't use a community template, ask if they want to share
       if (!usedCommunityTemplate) {

@@ -14,11 +14,13 @@ import {
   RefreshCw,
   BarChart3,
   Clock,
-  Bug
+  Bug,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import { usePageView } from "@/hooks/useAnalytics";
 
 interface DashboardStats {
   users: {
@@ -37,6 +39,26 @@ interface DashboardStats {
   attendance: {
     total: number;
     records7d: number;
+  };
+  analytics?: {
+    pageViews: {
+      total: number;
+      last7d: number;
+      last30d: number;
+    };
+    visitors: {
+      unique7d: number;
+      unique30d: number;
+    };
+    userTypes: {
+      guest: number;
+      registered: number;
+    };
+    topPages: Array<{ path: string; count: number }>;
+    features: {
+      aiChat: number;
+      timetableCreate: number;
+    };
   };
 }
 
@@ -59,6 +81,10 @@ interface TopTemplate {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const supabase = createClient();
+  
+  // Track page view
+  usePageView();
+  
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -252,6 +278,68 @@ export default function AdminDashboardPage() {
                 color="purple"
               />
             </div>
+
+            {/* Analytics Section */}
+            {stats.analytics && (
+              <div className="mb-8">
+                <h2 className="text-xl font-mono font-bold mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-6 h-6 text-primary" />
+                  Web Analytics
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  <StatCard
+                    title="Page Views"
+                    value={stats.analytics.pageViews.total.toLocaleString()}
+                    subtitle={`${stats.analytics.pageViews.last7d} (7d)`}
+                    icon={TrendingUp}
+                    color="blue"
+                  />
+                  <StatCard
+                    title="Unique Visitors"
+                    value={stats.analytics.visitors.unique30d.toLocaleString()}
+                    subtitle={`${stats.analytics.visitors.unique7d} (7d)`}
+                    icon={Users}
+                    color="green"
+                  />
+                  <StatCard
+                    title="Guest Sessions"
+                    value={stats.analytics.userTypes.guest.toLocaleString()}
+                    subtitle={`${stats.analytics.userTypes.registered} registered`}
+                    icon={UserPlus}
+                    color="purple"
+                  />
+                  <StatCard
+                    title="AI Chat Usage"
+                    value={stats.analytics.features.aiChat.toLocaleString()}
+                    subtitle={`${stats.analytics.features.timetableCreate} timetables created`}
+                    icon={Activity}
+                    color="primary"
+                  />
+                </div>
+                
+                {/* Top Pages */}
+                {stats.analytics.topPages.length > 0 && (
+                  <Card className="p-6 mb-4">
+                    <h3 className="text-lg font-mono font-semibold mb-4 flex items-center gap-2">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                      Top Pages
+                    </h3>
+                    <div className="space-y-2">
+                      {stats.analytics.topPages.slice(0, 5).map((page, idx) => (
+                        <div key={idx} className="flex justify-between items-center py-2 border-b border-border last:border-0">
+                          <span className="text-sm font-mono text-muted-foreground truncate flex-1 mr-4">
+                            {page.path}
+                          </span>
+                          <span className="text-sm font-mono font-semibold">
+                            {page.count.toLocaleString()} views
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
 
             {/* Additional Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
