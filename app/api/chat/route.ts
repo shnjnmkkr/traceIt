@@ -22,6 +22,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Block guests from using AI chat
+    if (user.user_metadata?.is_guest) {
+      return NextResponse.json(
+        { error: 'AI chat is not available for guest users. Please sign up to use this feature.' },
+        { status: 403 }
+      );
+    }
+
     // Rate limiting: 10 messages per minute per user
     const rateLimitResult = rateLimit(getIdentifier(user.id), RATE_LIMITS.AI_CHAT);
     

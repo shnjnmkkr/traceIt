@@ -7,7 +7,6 @@ import { Mail, Lock, LogIn, UserPlus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
-import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,8 +15,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
-  const hcaptchaRef = useRef<HCaptcha>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -111,22 +108,9 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    // Check if hCaptcha is completed
-    if (!hcaptchaToken) {
-      setError("Please complete the hCaptcha verification");
-      setLoading(false);
-      return;
-    }
-
     try {
       const response = await fetch('/api/auth/guest', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          hcaptchaToken,
-        }),
       });
 
       let data;
@@ -142,10 +126,6 @@ export default function LoginPage() {
         throw new Error(data?.error || `Failed to create guest session (${response.status})`);
       }
 
-      // Reset hCaptcha
-      hcaptchaRef.current?.resetCaptcha();
-      setHcaptchaToken(null);
-
       // Refresh to get the new session
       router.push('/dashboard');
       router.refresh();
@@ -153,9 +133,6 @@ export default function LoginPage() {
       console.error('Guest login error:', err);
       setError(err.message || "An error occurred. Please check if anonymous authentication is enabled in Supabase.");
       setLoading(false);
-      // Reset hCaptcha on error
-      hcaptchaRef.current?.resetCaptcha();
-      setHcaptchaToken(null);
     }
   };
 
