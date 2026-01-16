@@ -350,7 +350,18 @@ export default function CreateTimetablePage() {
         {/* Main Content Area with Community Panel */}
         <div className="flex gap-4">
           {/* Timetable Grid - DAYS AS ROWS, TIME AS COLUMNS */}
-          <Card className={`p-6 overflow-x-auto transition-all ${showCommunityPanel ? 'w-2/3' : 'w-full'}`}>
+          <Card className={`p-6 overflow-x-auto transition-all relative ${showCommunityPanel ? 'w-2/3' : 'w-full'}`}>
+          {/* Templates Toggle Button - Top Right */}
+          <Button
+            onClick={() => setShowCommunityPanel(!showCommunityPanel)}
+            variant="outline"
+            size="sm"
+            className="absolute top-4 right-4 gap-2 font-mono z-10"
+          >
+            <Users className="w-4 h-4" />
+            {showCommunityPanel ? 'Hide' : 'Show'} Templates
+          </Button>
+          
           <div className="min-w-[1000px]">
             {/* Header Row - Time Slots */}
             <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: `100px repeat(${TIME_SLOTS.length}, 1fr)` }}>
@@ -549,16 +560,6 @@ export default function CreateTimetablePage() {
               >
                 <Upload className="w-4 h-4" />
                 Upload Image
-              </Button>
-              
-              <Button
-                onClick={() => setShowCommunityPanel(!showCommunityPanel)}
-                variant="outline"
-                size="sm"
-                className="gap-2 font-mono"
-              >
-                <Users className="w-4 h-4" />
-                {showCommunityPanel ? 'Hide' : 'Show'} Templates
               </Button>
               
               <Button
