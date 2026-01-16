@@ -189,6 +189,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Block guests from using AI timetable extraction
+    if (user.user_metadata?.is_guest) {
+      return NextResponse.json(
+        { error: 'AI timetable extraction is not available for guest users. Please sign up to use this feature.' },
+        { status: 403 }
+      );
+    }
+
     // Rate limiting: 5 uploads per hour per user
     const rateLimitResult = rateLimit(getIdentifier(user.id), RATE_LIMITS.IMAGE_UPLOAD);
     

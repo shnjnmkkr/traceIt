@@ -52,7 +52,7 @@ export default function CreateTimetablePage() {
   
   // New features
   const [showImageUpload, setShowImageUpload] = useState(false);
-  const [showCommunityPanel, setShowCommunityPanel] = useState(false);
+  const [showCommunityPanel, setShowCommunityPanel] = useState(true); // Show templates by default for new users
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [usedCommunityTemplate, setUsedCommunityTemplate] = useState(false);
 
