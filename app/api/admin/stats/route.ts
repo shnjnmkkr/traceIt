@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/admin-utils';
 
@@ -18,13 +18,15 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
+    // Create service role client for admin queries (access to auth.users)
+    const adminSupabase = createServiceRoleClient();
+
     // Calculate dates for analytics
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const sevenDaysAgoDate = sevenDaysAgo.split('T')[0];
 
     // Fetch all stats in parallel (using service role for auth.users access)
-    // Note: We'll use timetables to estimate user counts since we can't directly query auth.users
     const [
       activeTimetablesResult,
       totalTimetablesResult,
@@ -104,26 +106,23 @@ export async function GET() {
     // Calculate total template usage
     const totalUsage = totalTemplateUsageResult.data?.reduce((sum: number, t: any) => sum + (t.usage_count || 0), 0) || 0;
 
-    // Estimate user counts from timetables (since we can't query auth.users directly)
-    const uniqueUserIds = new Set((uniqueUsersResult.data || []).map((t: any) => t.user_id));
-    const estimatedTotalUsers = uniqueUserIds.size;
+    // Get real user data from auth.users using service role client
+    const { data: allUsers, error: usersError } = await adminSupabase.auth.admin.listUsers();
+    const totalUsers = allUsers?.users?.length || 0;
 
-    // Get recent users from timetables (users who created timetables recently)
-    const { data: recentTimetables } = await supabase
-      .from('timetables')
-      .select('user_id, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10);
+    // Filter out guest users (users with is_guest metadata)
+    const registeredUsers = allUsers?.users?.filter((u: any) => !u.user_metadata?.is_guest) || [];
+    const totalRegisteredUsers = registeredUsers.length;
 
-    const recentUserIds = new Set((recentTimetables || []).map((t: any) => t.user_id));
-    const recentUsers = Array.from(recentUserIds).slice(0, 10).map((userId: any) => {
-      const timetable = recentTimetables?.find((t: any) => t.user_id === userId);
-      return {
-        id: userId,
-        email: 'user@example.com', // We can't get email without service role
-        created_at: timetable?.created_at || new Date().toISOString(),
-      };
-    });
+    // Get recent users (last 10 registered users, ordered by created_at)
+    const recentUsersData = registeredUsers
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 10)
+      .map((u: any) => ({
+        id: u.id,
+        email: u.email || 'No email',
+        created_at: u.created_at,
+      }));
 
     // Calculate unique visitors
     const uniqueVisitors7d = new Set((uniqueVisitors7dResult.data || []).map((pv: any) => pv.session_id).filter(Boolean)).size;
@@ -140,8 +139,7 @@ export async function GET() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
     
-    // Estimate active users (users with recent timetables or attendance)
-
+    // Calculate active users (users with recent activity: timetables, attendance, or page views)
     const { data: recentTimetables7d } = await supabase
       .from('timetables')
       .select('user_id')
@@ -154,9 +152,16 @@ export async function GET() {
       .gte('date', sevenDaysAgo.split('T')[0])
       .limit(1000);
 
+    const { data: recentPageViews7d } = await supabase
+      .from('page_views')
+      .select('user_id')
+      .gte('created_at', sevenDaysAgo)
+      .limit(1000);
+
     const activeUsers7d = new Set([
-      ...(recentTimetables7d || []).map((t: any) => t.user_id),
-      ...(recentAttendance7d || []).map((a: any) => a.user_id),
+      ...(recentTimetables7d || []).map((t: any) => t.user_id).filter(Boolean),
+      ...(recentAttendance7d || []).map((a: any) => a.user_id).filter(Boolean),
+      ...(recentPageViews7d || []).map((pv: any) => pv.user_id).filter(Boolean),
     ]).size;
 
     const { data: recentTimetables30d } = await supabase
@@ -171,15 +176,22 @@ export async function GET() {
       .gte('date', thirtyDaysAgo.split('T')[0])
       .limit(1000);
 
+    const { data: recentPageViews30d } = await supabase
+      .from('page_views')
+      .select('user_id')
+      .gte('created_at', thirtyDaysAgo)
+      .limit(1000);
+
     const activeUsers30d = new Set([
-      ...(recentTimetables30d || []).map((t: any) => t.user_id),
-      ...(recentAttendance30d || []).map((a: any) => a.user_id),
+      ...(recentTimetables30d || []).map((t: any) => t.user_id).filter(Boolean),
+      ...(recentAttendance30d || []).map((a: any) => a.user_id).filter(Boolean),
+      ...(recentPageViews30d || []).map((pv: any) => pv.user_id).filter(Boolean),
     ]).size;
 
     return NextResponse.json({
       stats: {
         users: {
-          total: estimatedTotalUsers,
+          total: totalRegisteredUsers, // Only registered users, excluding guests
           active7d: activeUsers7d,
           active30d: activeUsers30d,
         },
@@ -216,7 +228,7 @@ export async function GET() {
           },
         },
       },
-      recentUsers: recentUsers,
+      recentUsers: recentUsersData,
       topTemplates: topTemplatesResult.data || [],
     });
   } catch (error: any) {

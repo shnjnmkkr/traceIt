@@ -661,6 +661,23 @@ Days: Mon-Fri only. Times: 24-hour format.`,
 
     const response = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
 
+    // Track AI chat usage
+    try {
+      await supabase.from('feature_usage').insert({
+        user_id: user.id,
+        feature_name: 'ai_chat',
+        feature_data: {
+          message_length: message.length,
+          model_used: completion.model || 'unknown',
+          used_fallback: usedFallback,
+        },
+        is_guest: false, // Guests are blocked, so this will always be false
+      });
+    } catch (trackError) {
+      // Don't fail the request if tracking fails
+      console.error('Failed to track AI chat usage:', trackError);
+    }
+
     return NextResponse.json({ response });
   } catch (error: any) {
     console.error('Error in chat API:', error);
