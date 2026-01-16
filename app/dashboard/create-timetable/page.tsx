@@ -351,8 +351,17 @@ export default function CreateTimetablePage() {
         <div className="flex gap-4">
           {/* Timetable Grid - DAYS AS ROWS, TIME AS COLUMNS */}
           <Card className={`p-6 overflow-x-auto transition-all relative ${showCommunityPanel ? 'w-2/3' : 'w-full'}`}>
-          {/* Templates Toggle Button - Top Right, outside grid */}
-          <div className="flex justify-end mb-4">
+          {/* Action Buttons - Top Right, outside grid */}
+          <div className="flex justify-end gap-2 mb-4">
+            <Button
+              onClick={() => setShowImageUpload(true)}
+              variant="outline"
+              size="sm"
+              className="gap-2 font-mono"
+            >
+              <Upload className="w-4 h-4" />
+              Upload Image
+            </Button>
             <Button
               onClick={() => setShowCommunityPanel(!showCommunityPanel)}
               variant="outline"
@@ -554,16 +563,6 @@ export default function CreateTimetablePage() {
               {slots.length} classes added
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setShowImageUpload(true)}
-                variant="outline"
-                size="sm"
-                className="gap-2 font-mono"
-              >
-                <Upload className="w-4 h-4" />
-                Upload Image
-              </Button>
-              
               <Button
                 onClick={handleSubmit}
                 disabled={loading || slots.length === 0}
