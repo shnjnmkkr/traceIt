@@ -105,6 +105,8 @@ export async function GET() {
 
     // Calculate total template usage
     const totalUsage = totalTemplateUsageResult.data?.reduce((sum: number, t: any) => sum + (t.usage_count || 0), 0) || 0;
+    const publicTemplatesCount = publicTemplatesResult.count || 0;
+    const avgUsagePerTemplate = publicTemplatesCount > 0 ? Math.round((totalUsage / publicTemplatesCount) * 100) / 100 : 0;
 
     // Get real user data from auth.users using service role client
     const { data: allUsers, error: usersError } = await adminSupabase.auth.admin.listUsers();
@@ -114,15 +116,48 @@ export async function GET() {
     const registeredUsers = allUsers?.users?.filter((u: any) => !u.user_metadata?.is_guest) || [];
     const totalRegisteredUsers = registeredUsers.length;
 
-    // Get recent users (last 10 registered users, ordered by created_at)
+    // Get last activity for each user (from page_views)
+    const { data: allPageViews } = await supabase
+      .from('page_views')
+      .select('user_id, created_at')
+      .not('user_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(10000);
+
+    // Create a map of user_id to last activity timestamp
+    const userLastActivity = new Map<string, string>();
+    (allPageViews || []).forEach((pv: any) => {
+      if (pv.user_id && (!userLastActivity.has(pv.user_id) || 
+          new Date(pv.created_at) > new Date(userLastActivity.get(pv.user_id) || 0))) {
+        userLastActivity.set(pv.user_id, pv.created_at);
+      }
+    });
+
+    // Get recent users with last activity (last 10 active users, ordered by last activity or last_sign_in_at)
     const recentUsersData = registeredUsers
-      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 10)
-      .map((u: any) => ({
-        id: u.id,
-        email: u.email || 'No email',
-        created_at: u.created_at,
-      }));
+      .map((u: any) => {
+        const lastActivity = userLastActivity.get(u.id);
+        const lastSignIn = u.last_sign_in_at;
+        // Use the most recent between last activity and last sign in
+        let lastActive: string | null = null;
+        if (lastActivity && lastSignIn) {
+          lastActive = new Date(lastActivity) > new Date(lastSignIn) ? lastActivity : lastSignIn;
+        } else if (lastActivity) {
+          lastActive = lastActivity;
+        } else if (lastSignIn) {
+          lastActive = lastSignIn;
+        } else {
+          lastActive = u.created_at; // Fallback to account creation
+        }
+        return {
+          id: u.id,
+          email: u.email || 'No email',
+          created_at: u.created_at,
+          last_active: lastActive,
+        };
+      })
+      .sort((a: any, b: any) => new Date(b.last_active).getTime() - new Date(a.last_active).getTime())
+      .slice(0, 10);
 
     // Calculate unique visitors
     const uniqueVisitors7d = new Set((uniqueVisitors7dResult.data || []).map((pv: any) => pv.session_id).filter(Boolean)).size;
@@ -188,20 +223,104 @@ export async function GET() {
       ...(recentPageViews30d || []).map((pv: any) => pv.user_id).filter(Boolean),
     ]).size;
 
+    // Calculate daily active users (last 7 days) - optimized parallel queries
+    const today = new Date();
+    const dailyQueries = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayStart = new Date(dateStr).toISOString();
+      const dayEnd = new Date(date);
+      dayEnd.setHours(23, 59, 59, 999);
+      
+      dailyQueries.push(
+        supabase
+          .from('page_views')
+          .select('user_id')
+          .gte('created_at', dayStart)
+          .lte('created_at', dayEnd.toISOString())
+          .limit(1000)
+      );
+    }
+    
+    const dailyResults = await Promise.all(dailyQueries);
+    const dailyActiveUsers: Record<string, number> = {};
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayPageViews = dailyResults[6 - i]?.data || [];
+      dailyActiveUsers[dateStr] = new Set(dayPageViews.map((pv: any) => pv.user_id).filter(Boolean)).size;
+    }
+
+    // Calculate user growth (new users in last 7d, 30d)
+    const newUsers7d = registeredUsers.filter((u: any) => 
+      new Date(u.created_at) >= new Date(sevenDaysAgo)
+    ).length;
+    const newUsers30d = registeredUsers.filter((u: any) => 
+      new Date(u.created_at) >= new Date(thirtyDaysAgo)
+    ).length;
+
+    // Calculate retention rate (users active in last 7d who were also active 30d ago)
+    const { data: pageViews30dAgo } = await supabase
+      .from('page_views')
+      .select('user_id')
+      .gte('created_at', thirtyDaysAgo)
+      .lt('created_at', sevenDaysAgo)
+      .not('user_id', 'is', null)
+      .limit(1000);
+    
+    const usersActive30dAgo = new Set((pageViews30dAgo || []).map((pv: any) => pv.user_id).filter(Boolean));
+    const usersActive7d = new Set([
+      ...(recentTimetables7d || []).map((t: any) => t.user_id).filter(Boolean),
+      ...(recentAttendance7d || []).map((a: any) => a.user_id).filter(Boolean),
+      ...(recentPageViews7d || []).map((pv: any) => pv.user_id).filter(Boolean),
+    ]);
+    
+    const retainedUsers = Array.from(usersActive7d).filter((uid: string) => usersActive30dAgo.has(uid)).length;
+    const retentionRate = usersActive30dAgo.size > 0 
+      ? Math.round((retainedUsers / usersActive30dAgo.size) * 100) 
+      : 0;
+
+    // Get feature usage breakdown
+    const { data: allFeatureUsage } = await supabase
+      .from('feature_usage')
+      .select('feature_name, created_at')
+      .limit(1000);
+
+    const featureUsageBreakdown: Record<string, { total: number; last7d: number; last30d: number }> = {};
+    (allFeatureUsage || []).forEach((fu: any) => {
+      if (!featureUsageBreakdown[fu.feature_name]) {
+        featureUsageBreakdown[fu.feature_name] = { total: 0, last7d: 0, last30d: 0 };
+      }
+      featureUsageBreakdown[fu.feature_name].total++;
+      if (new Date(fu.created_at) >= new Date(sevenDaysAgo)) {
+        featureUsageBreakdown[fu.feature_name].last7d++;
+      }
+      if (new Date(fu.created_at) >= new Date(thirtyDaysAgo)) {
+        featureUsageBreakdown[fu.feature_name].last30d++;
+      }
+    });
+
     return NextResponse.json({
       stats: {
         users: {
           total: totalRegisteredUsers, // Only registered users, excluding guests
           active7d: activeUsers7d,
           active30d: activeUsers30d,
+          new7d: newUsers7d,
+          new30d: newUsers30d,
+          retentionRate: retentionRate,
         },
         timetables: {
           total: totalTimetablesResult.count || 0,
           active: activeTimetablesResult.count || 0,
         },
         templates: {
-          public: publicTemplatesResult.count || 0,
+          public: publicTemplatesCount,
           totalUsage: totalUsage,
+          avgUsagePerTemplate: avgUsagePerTemplate,
         },
         attendance: {
           total: totalAttendanceRecordsResult.count || 0,
@@ -222,9 +341,11 @@ export async function GET() {
             registered: registeredPageViewsResult.count || 0,
           },
           topPages: topPages,
+          dailyActiveUsers: dailyActiveUsers,
           features: {
             aiChat: aiChatUsageResult.count || 0,
             timetableCreate: timetableCreateUsageResult.count || 0,
+            breakdown: featureUsageBreakdown,
           },
         },
       },

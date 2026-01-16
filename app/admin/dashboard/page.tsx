@@ -27,6 +27,9 @@ interface DashboardStats {
     total: number;
     active7d: number;
     active30d: number;
+    new7d?: number;
+    new30d?: number;
+    retentionRate?: number;
   };
   timetables: {
     total: number;
@@ -35,6 +38,7 @@ interface DashboardStats {
   templates: {
     public: number;
     totalUsage: number;
+    avgUsagePerTemplate?: number;
   };
   attendance: {
     total: number;
@@ -55,9 +59,11 @@ interface DashboardStats {
       registered: number;
     };
     topPages: Array<{ path: string; count: number }>;
+    dailyActiveUsers?: Record<string, number>;
     features: {
       aiChat: number;
       timetableCreate: number;
+      breakdown?: Record<string, { total: number; last7d: number; last30d: number }>;
     };
   };
 }
@@ -66,6 +72,7 @@ interface RecentUser {
   id: string;
   email: string;
   created_at: string;
+  last_active?: string;
 }
 
 interface TopTemplate {
@@ -317,6 +324,62 @@ export default function AdminDashboardPage() {
                   />
                 </div>
                 
+                {/* Daily Active Users */}
+                {stats.analytics.dailyActiveUsers && (
+                  <Card className="p-6 mb-4">
+                    <h3 className="text-lg font-mono font-semibold mb-4 flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-primary" />
+                      Daily Active Users (Last 7 Days)
+                    </h3>
+                    <div className="space-y-2">
+                      {Object.entries(stats.analytics.dailyActiveUsers)
+                        .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+                        .map(([date, count]) => {
+                          const dateObj = new Date(date);
+                          const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+                          return (
+                            <div key={date} className="flex justify-between items-center py-2 border-b border-border last:border-0">
+                              <span className="text-sm font-mono text-muted-foreground">
+                                {dayName}, {dateObj.toLocaleDateString()}
+                              </span>
+                              <span className="text-sm font-mono font-semibold">
+                                {count} users
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </Card>
+                )}
+
+                {/* Feature Usage Breakdown */}
+                {stats.analytics.features.breakdown && Object.keys(stats.analytics.features.breakdown).length > 0 && (
+                  <Card className="p-6 mb-4">
+                    <h3 className="text-lg font-mono font-semibold mb-4 flex items-center gap-2">
+                      <Activity className="w-5 h-5 text-primary" />
+                      Feature Usage Breakdown
+                    </h3>
+                    <div className="space-y-3">
+                      {Object.entries(stats.analytics.features.breakdown).map(([feature, data]) => (
+                        <div key={feature} className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-mono font-semibold capitalize">
+                              {feature.replace(/_/g, ' ')}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              Total: {data.total}
+                            </span>
+                          </div>
+                          <div className="flex gap-4 text-xs text-muted-foreground">
+                            <span>7d: {data.last7d}</span>
+                            <span>30d: {data.last30d}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                )}
+
                 {/* Top Pages */}
                 {stats.analytics.topPages.length > 0 && (
                   <Card className="p-6 mb-4">
@@ -357,13 +420,27 @@ export default function AdminDashboardPage() {
                     <span className="text-sm text-muted-foreground">Active (30 days)</span>
                     <span className="font-mono font-semibold">{stats.users.active30d}</span>
                   </div>
+                  {stats.users.new7d !== undefined && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">New Users (7d)</span>
+                      <span className="font-mono font-semibold">{stats.users.new7d}</span>
+                    </div>
+                  )}
+                  {stats.users.new30d !== undefined && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">New Users (30d)</span>
+                      <span className="font-mono font-semibold">{stats.users.new30d}</span>
+                    </div>
+                  )}
                   <div className="pt-2 border-t border-border">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Retention Rate (7d)</span>
                       <span className="font-mono font-semibold">
-                        {stats.users.total > 0 
-                          ? Math.round((stats.users.active7d / stats.users.total) * 100) 
-                          : 0}%
+                        {stats.users.retentionRate !== undefined 
+                          ? `${stats.users.retentionRate}%`
+                          : stats.users.total > 0 
+                            ? `${Math.round((stats.users.active7d / stats.users.total) * 100)}%`
+                            : '0%'}
                       </span>
                     </div>
                   </div>
@@ -388,9 +465,11 @@ export default function AdminDashboardPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Avg Usage/Template</span>
                       <span className="font-mono font-semibold">
-                        {stats.templates.public > 0 
-                          ? Math.round(stats.templates.totalUsage / stats.templates.public) 
-                          : 0}
+                        {stats.templates.avgUsagePerTemplate !== undefined
+                          ? stats.templates.avgUsagePerTemplate.toFixed(2)
+                          : stats.templates.public > 0 
+                            ? (stats.templates.totalUsage / stats.templates.public).toFixed(2)
+                            : '0.00'}
                       </span>
                     </div>
                   </div>
@@ -402,7 +481,7 @@ export default function AdminDashboardPage() {
             <Card className="p-6 mb-8">
               <h3 className="text-lg font-mono font-semibold mb-4 flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />
-                Recent Users
+                Recent Active Users
               </h3>
               {recentUsers.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No recent users</p>
@@ -413,9 +492,16 @@ export default function AdminDashboardPage() {
                       key={user.id}
                       className="flex items-center justify-between py-2 border-b border-border last:border-0"
                     >
-                      <span className="text-sm font-mono">{user.email}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-mono">{user.email}</span>
+                        {user.last_active && (
+                          <span className="text-xs text-muted-foreground mt-1">
+                            Last active: {new Date(user.last_active).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(user.created_at).toLocaleDateString()}
+                        Joined: {new Date(user.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   ))}
