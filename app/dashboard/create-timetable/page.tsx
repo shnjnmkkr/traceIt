@@ -587,7 +587,7 @@ export default function CreateTimetablePage() {
 
         {/* Community Templates Panel */}
         {showCommunityPanel && (
-          <Card className="w-1/3 min-h-[600px]">
+          <Card className="w-1/3 h-[calc(100vh-12rem)] flex flex-col overflow-hidden">
             <CommunityTemplates onSelectTemplate={handleTemplateSelect} />
           </Card>
         )}
