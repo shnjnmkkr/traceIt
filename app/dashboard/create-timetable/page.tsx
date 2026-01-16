@@ -348,9 +348,9 @@ export default function CreateTimetablePage() {
         </Card>
 
         {/* Main Content Area with Community Panel */}
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-start">
           {/* Timetable Grid - DAYS AS ROWS, TIME AS COLUMNS */}
-          <Card className={`p-6 overflow-x-auto transition-all relative ${showCommunityPanel ? 'w-2/3' : 'w-full'}`}>
+          <Card className={`p-6 overflow-x-auto transition-all relative flex flex-col ${showCommunityPanel ? 'w-2/3 h-[calc(100vh-12rem)]' : 'w-full'}`}>
           {/* Action Buttons - Top Right, outside grid */}
           <div className="flex justify-end gap-2 mb-4">
             <Button
@@ -373,7 +373,7 @@ export default function CreateTimetablePage() {
             </Button>
           </div>
           
-          <div className="min-w-[1000px]">
+          <div className="min-w-[1000px] flex-1 overflow-y-auto">
             {/* Header Row - Time Slots */}
             <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: `100px repeat(${TIME_SLOTS.length}, 1fr)` }}>
               <div className="text-xs font-mono font-semibold text-muted-foreground p-2">Day</div>
