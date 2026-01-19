@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ImageUploadDialog } from "@/components/timetable/ImageUploadDialog";
 import { CommunityTemplates } from "@/components/timetable/CommunityTemplates";
 import { ShareTemplateDialog } from "@/components/timetable/ShareTemplateDialog";
-import { InvertedModeDialog } from "@/components/timetable/InvertedModeDialog";
+import { ExploreAboutDialog } from "@/components/timetable/ExploreAboutDialog";
 import { usePageView, trackFeature } from "@/hooks/useAnalytics";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -55,7 +55,7 @@ export default function CreateTimetablePage() {
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [showCommunityPanel, setShowCommunityPanel] = useState(true); // Show templates by default for new users
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [showInvertedModeDialog, setShowInvertedModeDialog] = useState(false);
+  const [showExploreDialog, setShowExploreDialog] = useState(false);
   const [usedCommunityTemplate, setUsedCommunityTemplate] = useState(false);
 
   useEffect(() => {
@@ -221,8 +221,8 @@ export default function CreateTimetablePage() {
         usedTemplate: usedCommunityTemplate 
       });
 
-      // For new users, ask about inverted mode first
-      setShowInvertedModeDialog(true);
+      // For new users, prompt to explore about page
+      setShowExploreDialog(true);
     } catch (err: any) {
       setError(err.message);
     } finally {

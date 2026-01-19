@@ -436,7 +436,8 @@ export default function DashboardPage() {
   
   // Settings update
   const handleSettingsChange = async (newSettings: UserSettings) => {
-    setSettings(newSettings);
+    // Create a new object reference to ensure React detects the change
+    setSettings({ ...newSettings });
     
     // Save to database
     try {
