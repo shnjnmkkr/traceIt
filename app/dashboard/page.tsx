@@ -481,7 +481,6 @@ export default function DashboardPage() {
       const settingsData = await settingsResponse.json();
       setSettings({
         ...settingsData.settings,
-        invertedMode: settingsData.settings.invertedMode ?? false,
       });
     }
   };
