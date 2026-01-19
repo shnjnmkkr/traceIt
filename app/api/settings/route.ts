@@ -100,9 +100,19 @@ export async function PUT(request: Request) {
     else if (existingSettings) updateData.include_labs_in_overall = existingSettings.include_labs_in_overall !== false;
     else updateData.include_labs_in_overall = true;
 
-    if (invertedMode !== undefined) updateData.inverted_mode = invertedMode;
-    else if (existingSettings) updateData.inverted_mode = existingSettings.inverted_mode || false;
-    else updateData.inverted_mode = false;
+    // Only include inverted_mode if it's defined (column may not exist in production yet)
+    if (invertedMode !== undefined) {
+      // Check if column exists by checking if existingSettings has the property
+      if (existingSettings && 'inverted_mode' in existingSettings) {
+        updateData.inverted_mode = invertedMode;
+      } else if (!existingSettings) {
+        // New settings - try to include it, but handle gracefully if column doesn't exist
+        updateData.inverted_mode = invertedMode;
+      }
+      // If existingSettings exists but doesn't have inverted_mode, skip it
+    } else if (existingSettings && 'inverted_mode' in existingSettings) {
+      updateData.inverted_mode = existingSettings.inverted_mode || false;
+    }
 
     // Upsert settings
     const { error } = await supabase
@@ -111,7 +121,20 @@ export async function PUT(request: Request) {
         onConflict: 'user_id',
       });
 
-    if (error) throw error;
+    if (error) {
+      // If error is about missing column, try again without inverted_mode
+      if (error.message?.includes('inverted_mode') || error.code === '42703') {
+        delete updateData.inverted_mode;
+        const { error: retryError } = await supabase
+          .from('user_settings')
+          .upsert(updateData, {
+            onConflict: 'user_id',
+          });
+        if (retryError) throw retryError;
+      } else {
+        throw error;
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
