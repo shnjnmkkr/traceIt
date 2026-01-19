@@ -206,7 +206,7 @@ export function TimetableGrid({
 
   return (
     <>
-      <Card className="overflow-visible">
+      <Card className="overflow-hidden">
         {/* Header with legend and edit button */}
         <div className="px-6 pt-6 pb-4 border-b border-border bg-card">
           <div className="flex items-center justify-between gap-4">
@@ -259,7 +259,7 @@ export function TimetableGrid({
         </div>
 
         {/* Timetable Grid with Integrated Scroll */}
-        <div className="overflow-x-auto overflow-y-visible">
+        <div className="overflow-x-auto">
           <div className="min-w-[800px] md:min-w-[1000px] p-2.5 md:p-5">
             {/* Header row - Time slots */}
             <div 
