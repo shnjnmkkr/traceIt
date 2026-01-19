@@ -25,6 +25,7 @@ import { usePageView, trackFeature } from "@/hooks/useAnalytics";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   
   // UI State

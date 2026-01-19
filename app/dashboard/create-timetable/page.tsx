@@ -9,7 +9,6 @@ import { createClient } from "@/lib/supabase/client";
 import { ImageUploadDialog } from "@/components/timetable/ImageUploadDialog";
 import { CommunityTemplates } from "@/components/timetable/CommunityTemplates";
 import { ShareTemplateDialog } from "@/components/timetable/ShareTemplateDialog";
-import { ExploreAboutDialog } from "@/components/timetable/ExploreAboutDialog";
 import { usePageView, trackFeature } from "@/hooks/useAnalytics";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -55,7 +54,6 @@ export default function CreateTimetablePage() {
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [showCommunityPanel, setShowCommunityPanel] = useState(true); // Show templates by default for new users
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [showExploreDialog, setShowExploreDialog] = useState(false);
   const [usedCommunityTemplate, setUsedCommunityTemplate] = useState(false);
 
   useEffect(() => {
@@ -221,8 +219,13 @@ export default function CreateTimetablePage() {
         usedTemplate: usedCommunityTemplate 
       });
 
-      // For new users, prompt to explore about page
-      setShowExploreDialog(true);
+      // If they didn't use a community template, ask if they want to share
+      if (!usedCommunityTemplate) {
+        setShowShareDialog(true);
+      } else {
+        // Redirect to dashboard with flag to show explore dialog
+        window.location.href = '/dashboard?showExplore=true';
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -600,22 +603,10 @@ export default function CreateTimetablePage() {
         isOpen={showShareDialog}
         onClose={() => {
           setShowShareDialog(false);
-          window.location.href = '/dashboard';
+          // Redirect to dashboard with flag to show explore dialog
+          window.location.href = '/dashboard?showExplore=true';
         }}
         timetableData={{ slots }}
-      />
-
-      <ExploreAboutDialog
-        isOpen={showExploreDialog}
-        onClose={() => {
-          setShowExploreDialog(false);
-          // After explore dialog, show share dialog if applicable
-          if (!usedCommunityTemplate) {
-            setShowShareDialog(true);
-          } else {
-            window.location.href = '/dashboard';
-          }
-        }}
       />
       </div>
     </div>
