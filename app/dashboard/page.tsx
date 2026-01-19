@@ -450,17 +450,37 @@ export default function DashboardPage() {
   // Settings update
   const handleSettingsChange = async (newSettings: UserSettings) => {
     // Create a new object reference to ensure React detects the change
-    setSettings({ ...newSettings });
+    const updatedSettings = { ...newSettings };
+    setSettings(updatedSettings);
     
     // Save to database
     try {
-      await fetch('/api/settings', {
+      const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newSettings),
+        body: JSON.stringify(updatedSettings),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Settings update error:', errorData);
+        // Revert on error
+        const settingsResponse = await fetch('/api/settings');
+        const settingsData = await settingsResponse.json();
+        setSettings({
+          ...settingsData.settings,
+          invertedMode: settingsData.settings.invertedMode ?? false,
+        });
+      }
     } catch (error) {
       console.error('Error updating settings:', error);
+      // Revert on error
+      const settingsResponse = await fetch('/api/settings');
+      const settingsData = await settingsResponse.json();
+      setSettings({
+        ...settingsData.settings,
+        invertedMode: settingsData.settings.invertedMode ?? false,
+      });
     }
   };
   
