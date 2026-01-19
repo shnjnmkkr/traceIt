@@ -96,18 +96,29 @@ export async function PUT(request: Request) {
     else if (existingSettings) updateData.show_analytics = existingSettings.show_analytics;
     else updateData.show_analytics = true;
 
-    if (includeLabsInOverall !== undefined) updateData.include_labs_in_overall = includeLabsInOverall;
-    else if (existingSettings) updateData.include_labs_in_overall = existingSettings.include_labs_in_overall !== false;
-    else updateData.include_labs_in_overall = true;
+    // Only include columns that exist in the schema
+    // Check if column exists by checking if existingSettings has the property
+    if (includeLabsInOverall !== undefined) {
+      if (existingSettings && 'include_labs_in_overall' in existingSettings) {
+        updateData.include_labs_in_overall = includeLabsInOverall;
+      } else if (!existingSettings) {
+        // Try to include it for new settings, will fail gracefully if column doesn't exist
+        updateData.include_labs_in_overall = includeLabsInOverall;
+      }
+    } else if (existingSettings && 'include_labs_in_overall' in existingSettings) {
+      updateData.include_labs_in_overall = existingSettings.include_labs_in_overall !== false;
+    }
 
-    // Include inverted_mode if defined
+    // Only include inverted_mode if column exists
     if (invertedMode !== undefined) {
-      updateData.inverted_mode = invertedMode;
-    } else if (existingSettings) {
-      // Preserve existing inverted_mode if not being updated
+      if (existingSettings && 'inverted_mode' in existingSettings) {
+        updateData.inverted_mode = invertedMode;
+      } else if (!existingSettings) {
+        // Try to include it for new settings, will fail gracefully if column doesn't exist
+        updateData.inverted_mode = invertedMode;
+      }
+    } else if (existingSettings && 'inverted_mode' in existingSettings) {
       updateData.inverted_mode = existingSettings.inverted_mode ?? false;
-    } else {
-      updateData.inverted_mode = false;
     }
 
     // Upsert settings
@@ -119,13 +130,35 @@ export async function PUT(request: Request) {
 
     if (error) {
       console.error('Settings update error:', error);
-      // Log the full error for debugging
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
-      });
+      // If error is about missing columns, try again without optional columns
+      if (error.code === 'PGRST204' && error.message?.includes('column')) {
+        // Remove optional columns and retry
+        const minimalUpdateData: any = {
+          user_id: user.id,
+          target_percentage: updateData.target_percentage,
+          count_mass_bunk_as: updateData.count_mass_bunk_as,
+          count_teacher_absent_as: updateData.count_teacher_absent_as,
+          show_analytics: updateData.show_analytics,
+        };
+        
+        const { error: retryError } = await supabase
+          .from('user_settings')
+          .upsert(minimalUpdateData, {
+            onConflict: 'user_id',
+          });
+        
+        if (retryError) {
+          console.error('Retry error:', retryError);
+          throw retryError;
+        }
+        
+        // Return success even though optional columns weren't updated
+        return NextResponse.json({ 
+          success: true, 
+          warning: 'Some optional settings could not be updated. Please refresh the schema cache in Supabase.' 
+        });
+      }
+      
       throw error;
     }
 
