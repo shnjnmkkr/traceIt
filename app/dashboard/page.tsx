@@ -684,7 +684,7 @@ export default function DashboardPage() {
           <div className="border-t border-border" />
 
           {/* Settings */}
-          <AttendanceSettings settings={settings} onChange={handleSettingsChange} />
+          <AttendanceSettings settings={settings} onChange={handleSettingsChange} isAdmin={isAdmin} />
             </div>
           </ResizableLeftPanel>
         )}
@@ -975,7 +975,7 @@ export default function DashboardPage() {
                 <div className="border-t border-border" />
 
                 {/* Settings */}
-                <AttendanceSettings settings={settings} onChange={handleSettingsChange} />
+                <AttendanceSettings settings={settings} onChange={handleSettingsChange} isAdmin={isAdmin} />
               </div>
             </motion.div>
           </>
