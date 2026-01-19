@@ -110,7 +110,10 @@ export default function DashboardPage() {
         // Fetch settings
         const settingsResponse = await fetch('/api/settings');
         const settingsData = await settingsResponse.json();
-        setSettings(settingsData.settings);
+        setSettings({
+          ...settingsData.settings,
+          invertedMode: settingsData.settings.invertedMode ?? false,
+        });
         
       } catch (error) {
         console.error('Error fetching data:', error);
