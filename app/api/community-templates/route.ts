@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, description, university, course, semester, group, templateData, creatorName } = body;
+    const { name, description, university, course, semester, templateData, creatorName } = body;
 
     if (!name || !templateData) {
       return NextResponse.json(
@@ -146,7 +146,6 @@ export async function POST(request: Request) {
         university,
         course,
         semester,
-        group: group || null,
         template_data: templateData,
         creator_id: user.id,
         creator_name: creatorName || 'Anonymous',

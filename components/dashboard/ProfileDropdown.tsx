@@ -29,10 +29,10 @@ export function ProfileDropdown() {
 
     // Check admin status (only for non-guests)
     if (!isGuest) {
-      fetch('/api/admin/check')
-        .then(res => res.json())
-        .then(data => setIsAdmin(data.isAdmin || false))
-        .catch(() => setIsAdmin(false));
+    fetch('/api/admin/check')
+      .then(res => res.json())
+      .then(data => setIsAdmin(data.isAdmin || false))
+      .catch(() => setIsAdmin(false));
     }
   }, [supabase, isGuest]);
 
@@ -158,15 +158,15 @@ export function ProfileDropdown() {
                     <span className="text-sm">Sign Up to Save</span>
                   </Button>
                 ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="w-full justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span className="text-sm">Logout</span>
-                  </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="w-full justify-start gap-3 h-9 px-3 text-muted-foreground hover:text-foreground"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="text-sm">Logout</span>
+                </Button>
                 )}
               </div>
 

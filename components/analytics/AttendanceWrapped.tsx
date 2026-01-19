@@ -311,13 +311,13 @@ export function AttendanceWrapped({
         // Wait for slide transition
         await new Promise(resolve => setTimeout(resolve, 400));
       }
-
+      
       // Freeze Framer Motion animations
       setIsCapturing(true);
       
       // Wait a bit for animations to freeze
       await new Promise(resolve => setTimeout(resolve, 100));
-
+      
       // Use the actual card element for capture
       if (!cardRef.current) {
         setIsCapturing(false);
@@ -353,13 +353,13 @@ export function AttendanceWrapped({
         // Wait for slide transition
         await new Promise(resolve => setTimeout(resolve, 400));
       }
-
+      
       // Freeze Framer Motion animations
       setIsCapturing(true);
       
       // Wait a bit for animations to freeze
       await new Promise(resolve => setTimeout(resolve, 100));
-
+      
       // Use the actual card element for capture
       if (!cardRef.current) {
         setIsCapturing(false);

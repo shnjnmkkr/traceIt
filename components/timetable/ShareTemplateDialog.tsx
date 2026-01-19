@@ -171,15 +171,15 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
 
             <div>
               <label className="block text-sm font-mono font-semibold mb-2">
-                Your Name (Optional)
-              </label>
-              <input
-                type="text"
-                value={formData.creatorName}
-                onChange={(e) => setFormData({ ...formData, creatorName: e.target.value })}
-                placeholder="Anonymous"
-                className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
-              />
+                  Your Name (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.creatorName}
+                  onChange={(e) => setFormData({ ...formData, creatorName: e.target.value })}
+                  placeholder="Anonymous"
+                  className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
+                />
             </div>
 
             {/* Buttons */}
