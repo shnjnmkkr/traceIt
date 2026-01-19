@@ -144,6 +144,17 @@ export function calculateAttendanceStats(
             subjectStats.lectureLeaves += weight;
           }
         } else if (status === "bunk") {
+          // Subtract from attended (mark as absent)
+          subjectStats.attended -= weight;
+          subjectStats.leaves += weight;
+          if (isLab) {
+            subjectStats.labAttended -= weight;
+            subjectStats.labLeaves += weight;
+          } else {
+            subjectStats.lectureAttended -= weight;
+            subjectStats.lectureLeaves += weight;
+          }
+        } else if (status === "bunk") {
           // Subtract from attended based on countMassBunkAs setting
           subjectStats.bunked += weight;
           if (isLab) {
