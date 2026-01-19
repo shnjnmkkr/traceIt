@@ -112,11 +112,13 @@ export async function PUT(request: Request) {
     }
 
     if (invertedMode !== undefined) {
-      if (existingSettings && 'inverted_mode' in existingSettings) {
-        updateData.inverted_mode = invertedMode;
-      }
+      // Always try to update inverted_mode if provided (column should exist after migration)
+      updateData.inverted_mode = invertedMode;
     } else if (existingSettings && 'inverted_mode' in existingSettings) {
       updateData.inverted_mode = existingSettings.inverted_mode ?? false;
+    } else {
+      // Default to false if not provided and doesn't exist
+      updateData.inverted_mode = false;
     }
 
     // Upsert settings
