@@ -8,9 +8,10 @@ import { Settings } from "lucide-react";
 interface AttendanceSettingsProps {
   settings: UserSettings;
   onChange: (settings: UserSettings) => void;
+  isAdmin?: boolean;
 }
 
-export function AttendanceSettings({ settings, onChange }: AttendanceSettingsProps) {
+export function AttendanceSettings({ settings, onChange, isAdmin = false }: AttendanceSettingsProps) {
   return (
     <Card className="p-4 space-y-4">
       <div className="flex items-center gap-2 mb-4">
@@ -90,21 +91,37 @@ export function AttendanceSettings({ settings, onChange }: AttendanceSettingsPro
       </div>
 
       {/* Inverted Mode Toggle */}
-      <div className="flex items-center justify-between gap-3 p-3 bg-muted rounded-lg">
+      <div className={`flex items-center justify-between gap-3 p-3 rounded-lg ${isAdmin ? 'bg-muted' : 'bg-muted/50 opacity-60'}`}>
         <div className="flex-1">
           <div className="text-xs font-mono font-semibold">
             Inverted Mode
           </div>
+          {!isAdmin && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Coming Soon
+            </div>
+          )}
         </div>
-        <Button
-          variant={settings.invertedMode ? "default" : "outline"}
-          size="sm"
-          onClick={() => onChange({ ...settings, invertedMode: !settings.invertedMode })}
-          className="flex-shrink-0"
-          title="Start with 100% attendance, mark absents instead of presents"
-        >
-          {settings.invertedMode ? "On" : "Off"}
-        </Button>
+        {isAdmin ? (
+          <Button
+            variant={settings.invertedMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => onChange({ ...settings, invertedMode: !settings.invertedMode })}
+            className="flex-shrink-0"
+            title="Start with 100% attendance, mark absents instead of presents"
+          >
+            {settings.invertedMode ? "On" : "Off"}
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className="flex-shrink-0 cursor-not-allowed"
+          >
+            Off
+          </Button>
+        )}
       </div>
 
       {/* Show Analytics Toggle */}
