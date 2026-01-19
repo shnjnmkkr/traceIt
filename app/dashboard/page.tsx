@@ -586,8 +586,8 @@ export default function DashboardPage() {
                 }`}
               >
                 <div className="flex items-center justify-between px-3 pt-2 pb-1">
-                  <div className="flex items-center gap-2">
-                    <RefreshCw className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
                     <span className="font-semibold text-xs">{settings.invertedMode ? "Inverted Mode" : "Normal Mode"}</span>
                   </div>
                   <div className={`w-10 h-5 rounded-full transition-all flex items-center px-0.5 flex-shrink-0 ${
