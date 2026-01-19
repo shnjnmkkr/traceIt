@@ -145,7 +145,7 @@ export default function DashboardPage() {
       settings,
       weekStart
     );
-  }, [timetable, attendanceRecords, semesterStart, semesterEnd, settings, weekStart]);
+  }, [timetable, attendanceRecords, semesterStart, semesterEnd, settings, settings.invertedMode, weekStart]);
 
   // Week navigation
   const handlePreviousWeek = () => setCurrentDate(subWeeks(currentDate, 1));

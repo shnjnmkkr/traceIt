@@ -11,7 +11,7 @@ interface ResizableLeftPanelProps {
 }
 
 export function ResizableLeftPanel({ children, onClose }: ResizableLeftPanelProps) {
-  const [width, setWidth] = useState(220);
+  const [width, setWidth] = useState(240);
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
