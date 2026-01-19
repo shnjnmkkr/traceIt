@@ -11,11 +11,11 @@ interface ResizableLeftPanelProps {
 }
 
 export function ResizableLeftPanel({ children, onClose }: ResizableLeftPanelProps) {
-  const [width, setWidth] = useState(280); // Increased from 220
+  const [width, setWidth] = useState(220);
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const MIN_WIDTH = 240;
+  const MIN_WIDTH = 200;
   const MAX_WIDTH = 400;
 
   const handleMouseDown = (e: React.MouseEvent) => {

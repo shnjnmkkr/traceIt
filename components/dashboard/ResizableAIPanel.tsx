@@ -11,7 +11,7 @@ interface ResizableAIPanelProps {
 }
 
 export function ResizableAIPanel({ onClose }: ResizableAIPanelProps) {
-  const [width, setWidth] = useState(380);
+  const [width, setWidth] = useState(280);
   const [isResizing, setIsResizing] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -25,7 +25,7 @@ export function ResizableAIPanel({ onClose }: ResizableAIPanelProps) {
       if (!isResizing) return;
       
       const newWidth = window.innerWidth - e.clientX;
-      if (newWidth >= 300 && newWidth <= 800) {
+      if (newWidth >= 260 && newWidth <= 800) {
         setWidth(newWidth);
       }
     };
