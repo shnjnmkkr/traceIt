@@ -198,7 +198,6 @@ export function calculateAttendanceStats(
           case "holiday":
             // Don't count holidays in any stats
             break;
-        }
       }
     });
   });
