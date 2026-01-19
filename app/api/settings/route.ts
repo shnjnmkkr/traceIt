@@ -28,7 +28,6 @@ export async function GET() {
             countTeacherAbsentAs: 'attended',
             showAnalytics: true,
             includeLabsInOverall: true,
-            invertedMode: false,
           },
         });
       }
@@ -42,7 +41,6 @@ export async function GET() {
           countTeacherAbsentAs: settings.count_teacher_absent_as,
           showAnalytics: settings.show_analytics ?? true, // Default to true if column doesn't exist
           includeLabsInOverall: settings.include_labs_in_overall !== false, // Default to true
-          invertedMode: settings.inverted_mode ?? false,
         },
       });
   } catch (error: any) {
@@ -66,7 +64,7 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { targetPercentage, countMassBunkAs, countTeacherAbsentAs, showAnalytics, includeLabsInOverall, invertedMode } = body;
+    const { targetPercentage, countMassBunkAs, countTeacherAbsentAs, showAnalytics, includeLabsInOverall } = body;
 
     // Get existing settings first for partial updates
     const { data: existingSettings } = await supabase
@@ -111,15 +109,6 @@ export async function PUT(request: Request) {
       updateData.include_labs_in_overall = existingSettings.include_labs_in_overall !== false;
     }
 
-    if (invertedMode !== undefined) {
-      // Always try to update inverted_mode if provided (column should exist after migration)
-      updateData.inverted_mode = invertedMode;
-    } else if (existingSettings && 'inverted_mode' in existingSettings) {
-      updateData.inverted_mode = existingSettings.inverted_mode ?? false;
-    } else {
-      // Default to false if not provided and doesn't exist
-      updateData.inverted_mode = false;
-    }
 
     // Upsert settings
     const { error } = await supabase

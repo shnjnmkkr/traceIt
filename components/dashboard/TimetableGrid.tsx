@@ -50,7 +50,6 @@ export function TimetableGrid({
   slots, 
   attendanceRecords, 
   currentWeekStart,
-  invertedMode = false,
   onSlotUpdate, 
   onSlotDelete, 
   onSlotEdit, 

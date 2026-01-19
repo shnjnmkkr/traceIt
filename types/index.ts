@@ -73,5 +73,4 @@ export interface UserSettings {
   countTeacherAbsentAs: "attended" | "absent" | "exclude";
   showAnalytics: boolean;
   includeLabsInOverall: boolean;
-  invertedMode?: boolean; // Default: false - start with 100%, mark absents instead of presents
 }

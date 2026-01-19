@@ -128,14 +128,12 @@ export async function POST(request: Request) {
       countTeacherAbsentAs: settingsData.count_teacher_absent_as,
       showAnalytics: settingsData.show_analytics,
       includeLabsInOverall: settingsData.include_labs_in_overall !== false, // Default to true
-      invertedMode: settingsData.inverted_mode || false,
     } : {
       targetPercentage: 75,
       countMassBunkAs: 'absent',
       countTeacherAbsentAs: 'attended',
       showAnalytics: true,
       includeLabsInOverall: true,
-      invertedMode: false,
     };
 
     // 5. Calculate current attendance stats
@@ -487,7 +485,6 @@ export async function POST(request: Request) {
         massBunkCounting: settings.countMassBunkAs, // "attended", "absent", or "exclude"
         teacherAbsentCounting: settings.countTeacherAbsentAs, // "attended", "absent", or "exclude"
         includeLabsInOverall: settings.includeLabsInOverall, // Whether labs are included in overall attendance
-        invertedMode: settings.invertedMode, // If true, attendance starts at 100%, user marks absents instead of presents
       },
     };
 
@@ -588,14 +585,10 @@ FOR SETTINGS (settings):
 - massBunkCounting = how mass bunks are counted ("attended", "absent", or "exclude") - RESPECT THIS USER PREFERENCE
 - teacherAbsentCounting = how teacher absences are counted ("attended", "absent", or "exclude") - RESPECT THIS USER PREFERENCE
 - includeLabsInOverall = whether labs are included in overall attendance calculation (true/false)
-- invertedMode = if true, attendance starts at 100% and user marks absents/bunks instead of presents. Unmarked classes count as attended. If false (normal mode), user marks presents and unmarked classes count as absent.
 
 IMPORTANT: 
 - Labs count towards attendance targets too! Never say "you can miss as many labs as you want"
 - ALWAYS respect the user's massBunkCounting and teacherAbsentCounting preferences when explaining how these are counted
-- CRITICAL: Check settings.invertedMode before answering ANY attendance question:
-  * If invertedMode is TRUE: Attendance starts at 100% for all classes. User marks absents, bunks, and missed classes (NOT presents). Unmarked classes that have occurred count as ATTENDED. When explaining, say "you've marked X absents" or "you've missed X classes", not "you've attended X classes". Calculations reflect tracking misses, not attendance.
-  * If invertedMode is FALSE (normal mode): User marks presents/attended classes. Unmarked classes that have occurred count as ABSENT. When explaining, say "you've attended X classes" or "you've marked X as present".
 - For subjects with both lab and lecture, use the separate lab/lecture breakdowns
 - Always clarify: "totalSoFar" means classes occurred so far, "totalInSemester" means total in entire semester
 - Use overallStats for questions about overall attendance, semester progress, or projections

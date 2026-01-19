@@ -107,123 +107,14 @@ export function calculateAttendanceStats(
       const weight = slot.type === "lab" ? 1 : (slot.rowSpan || 1);
       const isLab = slot.type === "lab";
 
-      // INVERTED MODE LOGIC:
-      // In inverted mode, all classes are assumed attended by default
-      // We count total classes and subtract based on absent/bunk records
-      if (settings.invertedMode) {
-        // Always count this class in total (it occurred)
-        subjectStats.total += weight;
-        if (isLab) {
-          subjectStats.labTotal += weight;
-        } else {
-          subjectStats.lectureTotal += weight;
-        }
-        
-        // Default to attended (count it as attended)
-        // In inverted mode, unmarked classes = attended
-        subjectStats.attended += weight;
-        if (isLab) {
-          subjectStats.labAttended += weight;
-        } else {
-          subjectStats.lectureAttended += weight;
-        }
-        
-        // Now subtract based on actual records
-        // In inverted mode, "attended" records are redundant (default is attended)
-        // Only "absent", "bunk", and "teacher_absent" matter
-        // IMPORTANT: "attended" status should be ignored - it's already counted
-        if (status === "absent") {
-          // Subtract from attended (mark as absent)
-          subjectStats.attended -= weight;
-          subjectStats.leaves += weight;
-          if (isLab) {
-            subjectStats.labAttended -= weight;
-            subjectStats.labLeaves += weight;
-          } else {
-            subjectStats.lectureAttended -= weight;
-            subjectStats.lectureLeaves += weight;
-          }
-        } else if (status === "bunk") {
-          // Subtract from attended based on countMassBunkAs setting
-          subjectStats.bunked += weight;
-          if (isLab) {
-            subjectStats.labBunked += weight;
-          } else {
-            subjectStats.lectureBunked += weight;
-          }
-          
-          if (settings.countMassBunkAs === "absent") {
-            // Count bunk as absent - subtract from attended
-            subjectStats.attended -= weight;
-            if (isLab) {
-              subjectStats.labAttended -= weight;
-            } else {
-              subjectStats.lectureAttended -= weight;
-            }
-          } else if (settings.countMassBunkAs === "exclude") {
-            // Exclude bunk - subtract from total and attended
-            subjectStats.total -= weight;
-            subjectStats.attended -= weight;
-            if (isLab) {
-              subjectStats.labTotal -= weight;
-              subjectStats.labAttended -= weight;
-            } else {
-              subjectStats.lectureTotal -= weight;
-              subjectStats.lectureAttended -= weight;
-            }
-          }
-          // If "attended", don't subtract (already counted as attended)
-        } else if (status === "teacher_absent") {
-          subjectStats.teacherAbsent += weight;
-          if (isLab) {
-            subjectStats.labTeacherAbsent += weight;
-          } else {
-            subjectStats.lectureTeacherAbsent += weight;
-          }
-          
-          if (settings.countTeacherAbsentAs === "absent") {
-            // Count teacher absent as absent - subtract from attended
-            subjectStats.attended -= weight;
-            if (isLab) {
-              subjectStats.labAttended -= weight;
-            } else {
-              subjectStats.lectureAttended -= weight;
-            }
-          } else if (settings.countTeacherAbsentAs === "exclude") {
-            // Exclude teacher absent - subtract from total and attended
-            subjectStats.total -= weight;
-            subjectStats.attended -= weight;
-            if (isLab) {
-              subjectStats.labTotal -= weight;
-              subjectStats.labAttended -= weight;
-            } else {
-              subjectStats.lectureTotal -= weight;
-              subjectStats.lectureAttended -= weight;
-            }
-          }
-          // If "attended", don't subtract (already counted as attended)
-        } else if (status === "holiday") {
-          // Holiday - subtract from total and attended (don't count)
-          subjectStats.total -= weight;
-          subjectStats.attended -= weight;
-          if (isLab) {
-            subjectStats.labTotal -= weight;
-            subjectStats.labAttended -= weight;
-          } else {
-            subjectStats.lectureTotal -= weight;
-            subjectStats.lectureAttended -= weight;
-          }
-        }
-        // If status is "attended" or null/unmarked, it's already counted as attended above
-      } else {
-        // NORMAL MODE LOGIC:
-        // Default to absent, mark attended
-        if (!status) {
-          status = "absent"; // Normal mode, unmarked = absent
-        }
-        
-        // Handle different statuses based on settings
-        switch (status) {
+      // NORMAL MODE LOGIC:
+      // Default to absent, mark attended
+      if (!status) {
+        status = "absent"; // Normal mode, unmarked = absent
+      }
+      
+      // Handle different statuses based on settings
+      switch (status) {
           case "attended":
             subjectStats.attended += weight;
             subjectStats.total += weight;

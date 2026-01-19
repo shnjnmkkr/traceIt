@@ -59,11 +59,9 @@ export default function DashboardPage() {
     countTeacherAbsentAs: "attended",
     showAnalytics: true,
     includeLabsInOverall: true,
-    invertedMode: false,
   });
   const [attendanceRecords, setAttendanceRecords] = useState<Map<string, string>>(new Map());
   const [showExploreDialog, setShowExploreDialog] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   
   // Check auth and fetch data on mount
   useEffect(() => {
@@ -113,19 +111,7 @@ export default function DashboardPage() {
         // Fetch settings
         const settingsResponse = await fetch('/api/settings');
         const settingsData = await settingsResponse.json();
-        setSettings({
-          ...settingsData.settings,
-          invertedMode: settingsData.settings.invertedMode ?? false,
-        });
-        
-        // Check admin status
-        try {
-          const adminCheck = await fetch('/api/admin/check');
-          const adminData = await adminCheck.json();
-          setIsAdmin(adminData.isAdmin || false);
-        } catch (error) {
-          setIsAdmin(false);
-        }
+        setSettings(settingsData.settings);
         
         // Check if we should show explore dialog (from create page redirect)
         if (typeof window !== 'undefined') {
@@ -180,7 +166,6 @@ export default function DashboardPage() {
     settings.countTeacherAbsentAs,
     settings.showAnalytics,
     settings.includeLabsInOverall,
-    settings.invertedMode,
     weekStart
   ]);
 
@@ -488,10 +473,7 @@ export default function DashboardPage() {
         // Revert on error
         const settingsResponse = await fetch('/api/settings');
         const settingsData = await settingsResponse.json();
-        setSettings({
-          ...settingsData.settings,
-          invertedMode: settingsData.settings.invertedMode ?? false,
-        });
+        setSettings(settingsData.settings);
       }
     } catch (error) {
       // Revert on error
@@ -684,7 +666,7 @@ export default function DashboardPage() {
           <div className="border-t border-border" />
 
           {/* Settings */}
-          <AttendanceSettings settings={settings} onChange={handleSettingsChange} isAdmin={isAdmin} />
+          <AttendanceSettings settings={settings} onChange={handleSettingsChange} />
             </div>
           </ResizableLeftPanel>
         )}
@@ -779,7 +761,6 @@ export default function DashboardPage() {
               slots={timetable.slots}
               attendanceRecords={attendanceRecords}
               currentWeekStart={weekStart}
-              invertedMode={settings.invertedMode || false}
               onSlotUpdate={handleSlotUpdate}
               onSlotDelete={handleSlotDelete}
               onSlotEdit={handleSlotEdit}
@@ -975,7 +956,7 @@ export default function DashboardPage() {
                 <div className="border-t border-border" />
 
                 {/* Settings */}
-                <AttendanceSettings settings={settings} onChange={handleSettingsChange} isAdmin={isAdmin} />
+                <AttendanceSettings settings={settings} onChange={handleSettingsChange} />
               </div>
             </motion.div>
           </>
