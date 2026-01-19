@@ -163,7 +163,7 @@ export function TimetableGrid({
       return "upcoming";
     }
     
-    // For past dates, return unmarked (will be handled by calculator based on invertedMode)
+    // For past dates, return unmarked (will be handled by calculator)
     return "unmarked";
   };
 
