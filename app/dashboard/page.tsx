@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Sparkles, UserPlus, RefreshCw } from "lucide-react";
 import { addWeeks, subWeeks, startOfWeek, format } from "date-fns";
@@ -22,6 +22,7 @@ import { calculateAttendanceStats } from "@/lib/attendance-calculator";
 import { Timetable, UserSettings } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import { usePageView, trackFeature } from "@/hooks/useAnalytics";
+import { ExploreAboutDialog } from "@/components/timetable/ExploreAboutDialog";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -62,6 +63,7 @@ export default function DashboardPage() {
     invertedMode: false,
   });
   const [attendanceRecords, setAttendanceRecords] = useState<Map<string, string>>(new Map());
+  const [showExploreDialog, setShowExploreDialog] = useState(false);
   
   // Check auth and fetch data on mount
   useEffect(() => {
@@ -116,6 +118,14 @@ export default function DashboardPage() {
           invertedMode: settingsData.settings.invertedMode ?? false,
         });
         
+        // Check if we should show explore dialog (from create page redirect)
+        const showExplore = searchParams?.get('showExplore') === 'true';
+        if (showExplore) {
+          setShowExploreDialog(true);
+          // Clean up URL parameter
+          router.replace('/dashboard', { scroll: false });
+        }
+        
       } catch (error) {
         console.error('Error fetching data:', error);
         router.push('/auth/login');
@@ -125,7 +135,7 @@ export default function DashboardPage() {
     };
     
     checkAuthAndFetchData();
-  }, [router, supabase]);
+  }, [router, supabase, searchParams]);
   
   // Semester dates
   const semesterStart = timetable ? new Date(timetable.startDate) : new Date();
@@ -987,6 +997,13 @@ export default function DashboardPage() {
           userEmail={userEmail || undefined}
         />
       )}
+
+      <ExploreAboutDialog
+        isOpen={showExploreDialog}
+        onClose={() => {
+          setShowExploreDialog(false);
+        }}
+      />
     </div>
   );
 }
