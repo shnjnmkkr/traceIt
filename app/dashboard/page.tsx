@@ -150,6 +150,8 @@ export default function DashboardPage() {
       return { overall: 0, subjects: [] };
     }
     
+    console.log('Recalculating analytics with invertedMode:', settings.invertedMode);
+    
     // Force recalculation by including all settings properties
     const result = calculateAttendanceStats(
       timetable.slots,
@@ -159,6 +161,8 @@ export default function DashboardPage() {
       settings,
       weekStart
     );
+    
+    console.log('Analytics result:', result);
     
     return result;
   }, [
@@ -466,6 +470,7 @@ export default function DashboardPage() {
   const handleSettingsChange = async (newSettings: UserSettings) => {
     // Create a new object reference to ensure React detects the change
     const updatedSettings = { ...newSettings };
+    console.log('Updating settings:', updatedSettings);
     setSettings(updatedSettings);
     
     // Save to database
@@ -486,6 +491,8 @@ export default function DashboardPage() {
           ...settingsData.settings,
           invertedMode: settingsData.settings.invertedMode ?? false,
         });
+      } else {
+        console.log('Settings updated successfully');
       }
     } catch (error) {
       console.error('Error updating settings:', error);
