@@ -167,7 +167,9 @@ export default function DashboardPage() {
     return result;
   }, [
     timetable, 
-    attendanceRecords, 
+    attendanceRecords,
+    // Convert Map to string for comparison to ensure React detects changes
+    Array.from(attendanceRecords.entries()).join(','),
     semesterStart, 
     semesterEnd, 
     settings.targetPercentage,
