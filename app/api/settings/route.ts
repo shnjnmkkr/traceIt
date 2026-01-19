@@ -100,18 +100,14 @@ export async function PUT(request: Request) {
     else if (existingSettings) updateData.include_labs_in_overall = existingSettings.include_labs_in_overall !== false;
     else updateData.include_labs_in_overall = true;
 
-    // Only include inverted_mode if it's defined (column may not exist in production yet)
+    // Include inverted_mode if defined
     if (invertedMode !== undefined) {
-      // Check if column exists by checking if existingSettings has the property
-      if (existingSettings && 'inverted_mode' in existingSettings) {
-        updateData.inverted_mode = invertedMode;
-      } else if (!existingSettings) {
-        // New settings - try to include it, but handle gracefully if column doesn't exist
-        updateData.inverted_mode = invertedMode;
-      }
-      // If existingSettings exists but doesn't have inverted_mode, skip it
-    } else if (existingSettings && 'inverted_mode' in existingSettings) {
-      updateData.inverted_mode = existingSettings.inverted_mode || false;
+      updateData.inverted_mode = invertedMode;
+    } else if (existingSettings) {
+      // Preserve existing inverted_mode if not being updated
+      updateData.inverted_mode = existingSettings.inverted_mode ?? false;
+    } else {
+      updateData.inverted_mode = false;
     }
 
     // Upsert settings
@@ -122,18 +118,15 @@ export async function PUT(request: Request) {
       });
 
     if (error) {
-      // If error is about missing column, try again without inverted_mode
-      if (error.message?.includes('inverted_mode') || error.code === '42703') {
-        delete updateData.inverted_mode;
-        const { error: retryError } = await supabase
-          .from('user_settings')
-          .upsert(updateData, {
-            onConflict: 'user_id',
-          });
-        if (retryError) throw retryError;
-      } else {
-        throw error;
-      }
+      console.error('Settings update error:', error);
+      // Log the full error for debugging
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      });
+      throw error;
     }
 
     return NextResponse.json({ success: true });
