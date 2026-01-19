@@ -120,6 +120,7 @@ export function calculateAttendanceStats(
         }
         
         // Default to attended (count it as attended)
+        // In inverted mode, unmarked classes = attended
         subjectStats.attended += weight;
         if (isLab) {
           subjectStats.labAttended += weight;
@@ -130,6 +131,7 @@ export function calculateAttendanceStats(
         // Now subtract based on actual records
         // In inverted mode, "attended" records are redundant (default is attended)
         // Only "absent", "bunk", and "teacher_absent" matter
+        // IMPORTANT: "attended" status should be ignored - it's already counted
         if (status === "absent") {
           // Subtract from attended (mark as absent)
           subjectStats.attended -= weight;
