@@ -605,39 +605,11 @@ export default function CreateTimetablePage() {
         timetableData={{ slots }}
       />
 
-      <InvertedModeDialog
-        isOpen={showInvertedModeDialog}
+      <ExploreAboutDialog
+        isOpen={showExploreDialog}
         onClose={() => {
-          setShowInvertedModeDialog(false);
-          // After inverted mode dialog, show share dialog if applicable
-          if (!usedCommunityTemplate) {
-            setShowShareDialog(true);
-          } else {
-            window.location.href = '/dashboard';
-          }
-        }}
-        onEnable={async () => {
-          // Enable inverted mode
-          try {
-            await fetch('/api/settings', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ invertedMode: true }),
-            });
-          } catch (error) {
-            console.error('Error enabling inverted mode:', error);
-          }
-          setShowInvertedModeDialog(false);
-          // After enabling, show share dialog if applicable
-          if (!usedCommunityTemplate) {
-            setShowShareDialog(true);
-          } else {
-            window.location.href = '/dashboard';
-          }
-        }}
-        onSkip={() => {
-          setShowInvertedModeDialog(false);
-          // After skipping, show share dialog if applicable
+          setShowExploreDialog(false);
+          // After explore dialog, show share dialog if applicable
           if (!usedCommunityTemplate) {
             setShowShareDialog(true);
           } else {
