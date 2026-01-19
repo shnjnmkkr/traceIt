@@ -63,6 +63,7 @@ export default function DashboardPage() {
   });
   const [attendanceRecords, setAttendanceRecords] = useState<Map<string, string>>(new Map());
   const [showExploreDialog, setShowExploreDialog] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   // Check auth and fetch data on mount
   useEffect(() => {
@@ -117,6 +118,15 @@ export default function DashboardPage() {
           invertedMode: settingsData.settings.invertedMode ?? false,
         });
         
+        // Check admin status
+        try {
+          const adminCheck = await fetch('/api/admin/check');
+          const adminData = await adminCheck.json();
+          setIsAdmin(adminData.isAdmin || false);
+        } catch (error) {
+          setIsAdmin(false);
+        }
+        
         // Check if we should show explore dialog (from create page redirect)
         if (typeof window !== 'undefined') {
           const params = new URLSearchParams(window.location.search);
@@ -150,10 +160,7 @@ export default function DashboardPage() {
       return { overall: 0, subjects: [] };
     }
     
-    console.log('Recalculating analytics with invertedMode:', settings.invertedMode);
-    
-    // Force recalculation by including all settings properties
-    const result = calculateAttendanceStats(
+    return calculateAttendanceStats(
       timetable.slots,
       attendanceRecords,
       semesterStart,
@@ -161,10 +168,6 @@ export default function DashboardPage() {
       settings,
       weekStart
     );
-    
-    console.log('Analytics result:', result);
-    
-    return result;
   }, [
     timetable, 
     attendanceRecords,
@@ -470,22 +473,18 @@ export default function DashboardPage() {
   
   // Settings update
   const handleSettingsChange = async (newSettings: UserSettings) => {
-    // Create a new object reference to ensure React detects the change
-    const updatedSettings = { ...newSettings };
-    console.log('Updating settings:', updatedSettings);
-    setSettings(updatedSettings);
+    setSettings(newSettings);
     
     // Save to database
     try {
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedSettings),
+        body: JSON.stringify(newSettings),
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Settings update error:', errorData);
         // Revert on error
         const settingsResponse = await fetch('/api/settings');
         const settingsData = await settingsResponse.json();
@@ -493,11 +492,8 @@ export default function DashboardPage() {
           ...settingsData.settings,
           invertedMode: settingsData.settings.invertedMode ?? false,
         });
-      } else {
-        console.log('Settings updated successfully');
       }
     } catch (error) {
-      console.error('Error updating settings:', error);
       // Revert on error
       const settingsResponse = await fetch('/api/settings');
       const settingsData = await settingsResponse.json();
