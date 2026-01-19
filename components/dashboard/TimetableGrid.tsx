@@ -28,6 +28,7 @@ interface TimetableGridProps {
   slots: TimetableSlot[];
   attendanceRecords: Map<string, string>;
   currentWeekStart: Date;
+  invertedMode?: boolean;
   onSlotUpdate?: (slotId: string, date: string, status: string) => void;
   onSlotDelete?: (slotId: string) => void;
   onSlotEdit?: (slot: TimetableSlot) => void;
