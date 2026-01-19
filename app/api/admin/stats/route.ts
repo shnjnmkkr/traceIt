@@ -149,7 +149,7 @@ export async function GET() {
         } else {
           lastActive = u.created_at; // Fallback to account creation
         }
-        return {
+      return {
           id: u.id,
           email: u.email || 'No email',
           created_at: u.created_at,

@@ -493,7 +493,7 @@ export default function AdminDashboardPage() {
                       className="flex items-center justify-between py-2 border-b border-border last:border-0"
                     >
                       <div className="flex flex-col">
-                        <span className="text-sm font-mono">{user.email}</span>
+                      <span className="text-sm font-mono">{user.email}</span>
                         {user.last_active && (
                           <span className="text-xs text-muted-foreground mt-1">
                             Last active: {new Date(user.last_active).toLocaleString()}
