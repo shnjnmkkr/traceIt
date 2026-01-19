@@ -58,6 +58,7 @@ export default function DashboardPage() {
     countTeacherAbsentAs: "attended",
     showAnalytics: true,
     includeLabsInOverall: true,
+    invertedMode: false,
   });
   const [attendanceRecords, setAttendanceRecords] = useState<Map<string, string>>(new Map());
   
