@@ -48,7 +48,8 @@ const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00
 export function TimetableGrid({ 
   slots, 
   attendanceRecords, 
-  currentWeekStart, 
+  currentWeekStart,
+  invertedMode = false,
   onSlotUpdate, 
   onSlotDelete, 
   onSlotEdit, 
@@ -156,10 +157,14 @@ export function TimetableGrid({
     // Check if date is in the past
     const slotDate = new Date(date);
     const today = startOfDay(new Date());
-    if (isBefore(slotDate, today)) {
-      return "unmarked";
+    const isPastDate = isBefore(slotDate, today);
+    
+    if (!isPastDate) {
+      return "upcoming";
     }
-    return "upcoming";
+    
+    // For past dates, return unmarked (will be handled by calculator based on invertedMode)
+    return "unmarked";
   };
 
   const handleSlotClick = (slot: TimetableSlot, date: string, event: React.MouseEvent<HTMLDivElement>) => {
@@ -205,23 +210,23 @@ export function TimetableGrid({
         <div className="px-6 pt-6 pb-4 border-b border-border bg-card">
           <div className="flex items-center justify-between gap-4">
             {/* Legend */}
-            <div className="flex items-center gap-4 flex-1 overflow-x-auto">
+            <div className="flex items-center gap-2 md:gap-4 flex-1 overflow-x-auto pb-2 md:pb-0">
               {STATUS_LEGEND.map((status, idx) => (
                 <motion.div
                   key={status.key}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: idx * 0.03 }}
-                  className="flex items-center gap-1.5 flex-shrink-0"
+                  className="flex items-center gap-1 md:gap-1.5 flex-shrink-0"
                 >
                   <div
-                    className="w-2.5 h-2.5 rounded-sm border-2"
+                    className="w-2 h-2 md:w-2.5 md:h-2.5 rounded-sm border-2 flex-shrink-0"
                     style={{
                       backgroundColor: `${getStatusColor(status.key)}20`,
                       borderColor: getStatusColor(status.key),
                     }}
                   />
-                  <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
+                  <span className="text-[10px] md:text-xs text-muted-foreground font-mono whitespace-nowrap">
                     {status.label}
                   </span>
                 </motion.div>
@@ -254,15 +259,18 @@ export function TimetableGrid({
 
         {/* Timetable Grid with Integrated Scroll */}
         <div className="overflow-x-auto overflow-y-hidden">
-          <div className="min-w-[1000px] p-6">
+          <div className="min-w-[800px] md:min-w-[1000px] p-2.5 md:p-5">
             {/* Header row - Time slots */}
-            <div className="grid gap-2 mb-2" style={{ gridTemplateColumns: `100px repeat(${TIME_SLOTS.length}, 1fr)` }}>
-              <div className="text-xs font-mono font-semibold text-muted-foreground p-2">Day</div>
+            <div 
+              className="grid gap-1 md:gap-1.5 mb-1.5 md:mb-2" 
+              style={{ gridTemplateColumns: `70px repeat(${TIME_SLOTS.length}, minmax(75px, 1fr))` }}
+            >
+              <div className="text-[10px] md:text-xs font-mono font-semibold text-muted-foreground p-1.5 md:p-2 sticky left-0 bg-card z-10">Day</div>
               {TIME_SLOTS.map((time, idx) => {
                 const nextTime = TIME_SLOTS[idx + 1];
                 const endTime = nextTime || (parseInt(time.split(':')[0]) + 1) + ':00';
                 return (
-                  <div key={time} className="text-xs font-mono font-semibold text-center p-2">
+                  <div key={time} className="text-[10px] md:text-xs font-mono font-semibold text-center p-1.5 md:p-2">
                     {time}-{endTime}
                   </div>
                 );
@@ -271,8 +279,12 @@ export function TimetableGrid({
 
             {/* Rows - Each Day */}
             {DAYS.map((day, dayIdx) => (
-              <div key={day} className="grid gap-2 mb-2" style={{ gridTemplateColumns: `100px repeat(${TIME_SLOTS.length}, 1fr)` }}>
-                <div className="text-xs font-mono font-semibold p-2 flex items-center uppercase tracking-wider">
+              <div 
+                key={day} 
+                className="grid gap-1 md:gap-1.5 mb-1.5 md:mb-2"
+                style={{ gridTemplateColumns: `70px repeat(${TIME_SLOTS.length}, minmax(75px, 1fr))` }}
+              >
+                <div className="text-[10px] md:text-xs font-mono font-semibold p-1.5 md:p-2 flex items-center uppercase tracking-wider sticky left-0 bg-card z-10 border-r border-border">
                   {day}
                 </div>
                 
@@ -326,10 +338,10 @@ export function TimetableGrid({
                             setIsAddDialogOpen(true);
                           }
                         }}
-                        className="min-h-[70px] border-2 border-dashed border-border rounded-md p-3 cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-all flex items-center justify-center group"
+                        className="min-h-[55px] md:min-h-[65px] border-2 border-dashed border-border rounded-md p-1.5 md:p-2 cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-all flex items-center justify-center group touch-manipulation"
                         style={{ gridColumnStart, gridColumnEnd }}
                       >
-                        <Plus className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground opacity-0 group-hover:opacity-100 md:group-hover:opacity-100 group-active:opacity-100 transition-opacity" />
                       </div>
                     );
                   }
@@ -347,14 +359,14 @@ export function TimetableGrid({
                           handleSlotClick(slot, date, e);
                         }
                       }}
-                      className={`min-h-[110px] border-2 rounded-md p-3 cursor-pointer transition-all relative ${
+                      className={`min-h-[75px] md:min-h-[95px] border-2 rounded-md p-1.5 md:p-2.5 cursor-pointer transition-all relative touch-manipulation ${
                         isEditMode && isSlotSelected
                           ? 'border-warning bg-warning/10 shadow-lg'
                           : isEditMode && isSlotEditing
                           ? 'border-primary bg-primary/10'
                           : slot && (slot.subject || slot.subjectName)
-                          ? 'border-primary bg-primary/5 hover:bg-primary/10'
-                          : 'border-dashed border-border hover:border-primary/50 hover:bg-muted/50'
+                          ? 'border-primary bg-primary/5 hover:bg-primary/10 active:bg-primary/15'
+                          : 'border-dashed border-border hover:border-primary/50 hover:bg-muted/50 active:bg-muted/70'
                       } ${isMerging ? 'ring-2 ring-warning shadow-lg' : ''}`}
                       style={{
                         gridColumnStart,
@@ -479,24 +491,24 @@ export function TimetableGrid({
                         </div>
                       ) : (
                         <div className="h-full flex flex-col">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="text-sm font-mono font-bold text-primary leading-tight">
+                          <div className="flex items-start justify-between gap-1 md:gap-1.5">
+                            <div className="text-[11px] md:text-xs font-mono font-bold text-primary leading-tight truncate flex-1">
                               {slot.subject}
                             </div>
                             {slot.type === "lab" && (
-                              <div className="text-xs px-1.5 py-0.5 bg-primary/20 text-primary rounded font-mono font-bold">
+                              <div className="text-[9px] md:text-[10px] px-1 py-0.5 bg-primary/20 text-primary rounded font-mono font-bold flex-shrink-0">
                                 LAB
                               </div>
                             )}
                           </div>
-                          <div className="text-xs text-muted-foreground mt-1.5 leading-relaxed line-clamp-2">
+                          <div className="text-[9px] md:text-[10px] text-muted-foreground mt-0.5 md:mt-1 leading-tight line-clamp-2">
                             {slot.subjectName}
                           </div>
                           
                           {!isEditMode && (
                             <Badge 
                               variant="outline" 
-                              className="text-xs w-fit mt-auto"
+                              className="text-[9px] md:text-[10px] w-fit mt-auto py-0 px-1.5"
                               style={{
                                 borderColor: getStatusColor(status),
                                 color: getStatusColor(status),

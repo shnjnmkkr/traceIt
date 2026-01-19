@@ -28,6 +28,7 @@ export async function GET() {
             countTeacherAbsentAs: 'attended',
             showAnalytics: true,
             includeLabsInOverall: true,
+            invertedMode: false,
           },
         });
       }
@@ -41,6 +42,7 @@ export async function GET() {
           countTeacherAbsentAs: settings.count_teacher_absent_as,
           showAnalytics: settings.show_analytics,
           includeLabsInOverall: settings.include_labs_in_overall !== false, // Default to true
+          invertedMode: settings.inverted_mode || false,
         },
       });
   } catch (error: any) {
@@ -64,19 +66,48 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const { targetPercentage, countMassBunkAs, countTeacherAbsentAs, showAnalytics, includeLabsInOverall } = body;
+    const { targetPercentage, countMassBunkAs, countTeacherAbsentAs, showAnalytics, includeLabsInOverall, invertedMode } = body;
+
+    // Get existing settings first for partial updates
+    const { data: existingSettings } = await supabase
+      .from('user_settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    // Build update object with existing values as defaults
+    const updateData: any = {
+      user_id: user.id,
+    };
+
+    if (targetPercentage !== undefined) updateData.target_percentage = targetPercentage;
+    else if (existingSettings) updateData.target_percentage = existingSettings.target_percentage;
+    else updateData.target_percentage = 75;
+
+    if (countMassBunkAs !== undefined) updateData.count_mass_bunk_as = countMassBunkAs;
+    else if (existingSettings) updateData.count_mass_bunk_as = existingSettings.count_mass_bunk_as;
+    else updateData.count_mass_bunk_as = 'absent';
+
+    if (countTeacherAbsentAs !== undefined) updateData.count_teacher_absent_as = countTeacherAbsentAs;
+    else if (existingSettings) updateData.count_teacher_absent_as = existingSettings.count_teacher_absent_as;
+    else updateData.count_teacher_absent_as = 'attended';
+
+    if (showAnalytics !== undefined) updateData.show_analytics = showAnalytics;
+    else if (existingSettings) updateData.show_analytics = existingSettings.show_analytics;
+    else updateData.show_analytics = true;
+
+    if (includeLabsInOverall !== undefined) updateData.include_labs_in_overall = includeLabsInOverall;
+    else if (existingSettings) updateData.include_labs_in_overall = existingSettings.include_labs_in_overall !== false;
+    else updateData.include_labs_in_overall = true;
+
+    if (invertedMode !== undefined) updateData.inverted_mode = invertedMode;
+    else if (existingSettings) updateData.inverted_mode = existingSettings.inverted_mode || false;
+    else updateData.inverted_mode = false;
 
     // Upsert settings
     const { error } = await supabase
       .from('user_settings')
-      .upsert({
-        user_id: user.id,
-        target_percentage: targetPercentage,
-        count_mass_bunk_as: countMassBunkAs,
-        count_teacher_absent_as: countTeacherAbsentAs,
-        show_analytics: showAnalytics,
-        include_labs_in_overall: includeLabsInOverall !== undefined ? includeLabsInOverall : true,
-      }, {
+      .upsert(updateData, {
         onConflict: 'user_id',
       });
 

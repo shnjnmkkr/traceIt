@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ImageUploadDialog } from "@/components/timetable/ImageUploadDialog";
 import { CommunityTemplates } from "@/components/timetable/CommunityTemplates";
 import { ShareTemplateDialog } from "@/components/timetable/ShareTemplateDialog";
+import { InvertedModeDialog } from "@/components/timetable/InvertedModeDialog";
 import { usePageView, trackFeature } from "@/hooks/useAnalytics";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -54,6 +55,7 @@ export default function CreateTimetablePage() {
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [showCommunityPanel, setShowCommunityPanel] = useState(true); // Show templates by default for new users
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showInvertedModeDialog, setShowInvertedModeDialog] = useState(false);
   const [usedCommunityTemplate, setUsedCommunityTemplate] = useState(false);
 
   useEffect(() => {
@@ -219,13 +221,8 @@ export default function CreateTimetablePage() {
         usedTemplate: usedCommunityTemplate 
       });
 
-      // If they didn't use a community template, ask if they want to share
-      if (!usedCommunityTemplate) {
-        setShowShareDialog(true);
-      } else {
-        // Hard redirect to ensure fresh data load
-        window.location.href = '/dashboard';
-      }
+      // For new users, ask about inverted mode first
+      setShowInvertedModeDialog(true);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -606,6 +603,47 @@ export default function CreateTimetablePage() {
           window.location.href = '/dashboard';
         }}
         timetableData={{ slots }}
+      />
+
+      <InvertedModeDialog
+        isOpen={showInvertedModeDialog}
+        onClose={() => {
+          setShowInvertedModeDialog(false);
+          // After inverted mode dialog, show share dialog if applicable
+          if (!usedCommunityTemplate) {
+            setShowShareDialog(true);
+          } else {
+            window.location.href = '/dashboard';
+          }
+        }}
+        onEnable={async () => {
+          // Enable inverted mode
+          try {
+            await fetch('/api/settings', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ invertedMode: true }),
+            });
+          } catch (error) {
+            console.error('Error enabling inverted mode:', error);
+          }
+          setShowInvertedModeDialog(false);
+          // After enabling, show share dialog if applicable
+          if (!usedCommunityTemplate) {
+            setShowShareDialog(true);
+          } else {
+            window.location.href = '/dashboard';
+          }
+        }}
+        onSkip={() => {
+          setShowInvertedModeDialog(false);
+          // After skipping, show share dialog if applicable
+          if (!usedCommunityTemplate) {
+            setShowShareDialog(true);
+          } else {
+            window.location.href = '/dashboard';
+          }
+        }}
       />
       </div>
     </div>

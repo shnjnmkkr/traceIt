@@ -89,6 +89,24 @@ export function AttendanceSettings({ settings, onChange }: AttendanceSettingsPro
         </div>
       </div>
 
+      {/* Inverted Mode Toggle */}
+      <div className="flex items-center justify-between gap-3 p-3 bg-muted rounded-lg">
+        <div className="flex-1">
+          <div className="text-xs font-mono font-semibold">
+            Inverted Mode
+          </div>
+        </div>
+        <Button
+          variant={settings.invertedMode ? "default" : "outline"}
+          size="sm"
+          onClick={() => onChange({ ...settings, invertedMode: !settings.invertedMode })}
+          className="flex-shrink-0"
+          title="Start with 100% attendance, mark absents instead of presents"
+        >
+          {settings.invertedMode ? "On" : "Off"}
+        </Button>
+      </div>
+
       {/* Show Analytics Toggle */}
       <div className="flex items-start justify-between gap-3 p-3 bg-muted rounded-lg">
         <div className="flex-1">

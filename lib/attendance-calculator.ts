@@ -95,9 +95,14 @@ export function calculateAttendanceStats(
         hasClassOccurred = classStartTime < today;
       }
       
-      // If no record exists and class has occurred, count as absent
+      // Handle inverted mode: default to attended, mark absents/bunks
+      // Normal mode: default to absent, mark attended
       if (!status && hasClassOccurred) {
-        status = "absent";
+        if (settings.invertedMode) {
+          status = "attended"; // In inverted mode, unmarked = attended
+        } else {
+          status = "absent"; // Normal mode, unmarked = absent
+        }
       }
       
       // Skip if no record and class hasn't occurred yet (upcoming)

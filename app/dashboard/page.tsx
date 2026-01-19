@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Sparkles, UserPlus } from "lucide-react";
+import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Sparkles, UserPlus, RefreshCw } from "lucide-react";
 import { addWeeks, subWeeks, startOfWeek, format } from "date-fns";
 import { WeekSelector } from "@/components/dashboard/WeekSelector";
 import { TimetableHeader } from "@/components/dashboard/TimetableHeader";
@@ -567,16 +567,49 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Bulk Marking Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsBulkMarkingOpen(true)}
-              className="w-full gap-2 font-mono text-xs"
-            >
-              <CalendarDays className="w-3.5 h-3.5" />
-              Mark Entire Day
-            </Button>
+            {/* Inverted Mode Toggle and Bulk Marking */}
+            <div className="space-y-1.5">
+              {/* Inverted Mode Toggle */}
+              <button
+                onClick={async () => {
+                  const newSettings = { ...settings, invertedMode: !settings.invertedMode };
+                  await handleSettingsChange(newSettings);
+                }}
+                className={`w-full rounded-lg border-2 transition-all font-mono text-xs ${
+                  settings.invertedMode 
+                    ? 'bg-primary border-primary text-primary-foreground' 
+                    : 'bg-background border-border text-foreground hover:border-primary/50'
+                }`}
+              >
+                <div className="flex items-center justify-between px-3 pt-2 pb-1">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span className="font-semibold text-xs">{settings.invertedMode ? "Inverted Mode" : "Normal Mode"}</span>
+                  </div>
+                  <div className={`w-10 h-5 rounded-full transition-all flex items-center px-0.5 flex-shrink-0 ${
+                    settings.invertedMode ? 'bg-primary-foreground/20 justify-end' : 'bg-muted justify-start'
+                  }`}>
+                    <div className={`w-4 h-4 rounded-full transition-all ${
+                      settings.invertedMode ? 'bg-primary-foreground' : 'bg-muted-foreground'
+                    }`} />
+                  </div>
+                </div>
+                <div className="text-[8px] text-center leading-none px-3 pb-2 opacity-70 whitespace-nowrap">
+                  {settings.invertedMode ? "Mark absents, unmarked = attended" : "Mark presents, unmarked = absent"}
+                </div>
+              </button>
+
+              {/* Bulk Marking Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsBulkMarkingOpen(true)}
+                className="w-full gap-2 font-mono text-xs"
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
+                Mark Entire Day
+              </Button>
+            </div>
           </motion.div>
 
           {/* Divider */}
@@ -601,7 +634,7 @@ export default function DashboardPage() {
 
       {/* Center Panel - Scrollable (Timetable + Analytics) */}
       <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-6 max-w-7xl space-y-8">
+        <div className="container mx-auto p-3 md:p-6 max-w-7xl space-y-6 md:space-y-8">
           {/* Sticky Header with AI Toggle */}
           <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm pb-4">
             <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
@@ -688,6 +721,7 @@ export default function DashboardPage() {
               slots={timetable.slots}
               attendanceRecords={attendanceRecords}
               currentWeekStart={weekStart}
+              invertedMode={settings.invertedMode || false}
               onSlotUpdate={handleSlotUpdate}
               onSlotDelete={handleSlotDelete}
               onSlotEdit={handleSlotEdit}
