@@ -36,7 +36,14 @@ export function Footer() {
     <footer ref={footerRef} className="w-full py-4 bg-background border-t border-border mt-auto">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-3 items-center gap-4">
-          <div></div>
+          <div className="flex justify-start">
+            <Link 
+              href="/about" 
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors font-mono"
+            >
+              About
+            </Link>
+          </div>
           <div className="flex justify-center">
             <Link 
               href="/report-bug" 
