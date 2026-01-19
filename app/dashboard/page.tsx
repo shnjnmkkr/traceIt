@@ -606,38 +606,8 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Inverted Mode Toggle and Bulk Marking */}
+            {/* Bulk Marking */}
             <div className="space-y-1.5">
-              {/* Inverted Mode Toggle */}
-              <button
-                onClick={async () => {
-                  const newSettings = { ...settings, invertedMode: !settings.invertedMode };
-                  await handleSettingsChange(newSettings);
-                }}
-                className={`w-full rounded-lg border-2 transition-all font-mono text-xs ${
-                  settings.invertedMode 
-                    ? 'bg-primary border-primary text-primary-foreground' 
-                    : 'bg-background border-border text-foreground hover:border-primary/50'
-                }`}
-              >
-                <div className="flex items-center justify-between px-3 pt-2 pb-1">
-                  <div className="flex items-center gap-2 whitespace-nowrap">
-                    <RefreshCw className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="font-semibold text-xs">{settings.invertedMode ? "Inverted Mode" : "Normal Mode"}</span>
-                  </div>
-                  <div className={`w-10 h-5 rounded-full transition-all flex items-center px-0.5 flex-shrink-0 ${
-                    settings.invertedMode ? 'bg-primary-foreground/20 justify-end' : 'bg-muted justify-start'
-                  }`}>
-                    <div className={`w-4 h-4 rounded-full transition-all ${
-                      settings.invertedMode ? 'bg-primary-foreground' : 'bg-muted-foreground'
-                    }`} />
-                  </div>
-                </div>
-                <div className="text-[8px] text-center leading-none px-3 pb-2 opacity-70 whitespace-nowrap">
-                  {settings.invertedMode ? "Mark absents, unmarked = attended" : "Mark presents, unmarked = absent"}
-                </div>
-              </button>
-
               {/* Bulk Marking Button */}
               <Button
                 variant="outline"

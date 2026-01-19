@@ -142,27 +142,6 @@ export default function AboutPage() {
                 <div className="space-y-4">
                   <div className="bg-muted rounded-lg p-4">
                     <div className="flex items-start gap-3">
-                      <RefreshCw className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <h3 className="text-sm font-mono font-semibold text-foreground mb-2">
-                          Inverted Mode
-                        </h3>
-                        <p className="text-xs text-muted-foreground leading-relaxed mb-2">
-                          Inverted mode changes how attendance is tracked:
-                        </p>
-                        <ul className="text-xs text-muted-foreground space-y-1.5 ml-4 list-disc">
-                          <li><strong className="text-foreground">Normal Mode (default):</strong> You mark classes as attended. Unmarked classes that have occurred count as absent.</li>
-                          <li><strong className="text-foreground">Inverted Mode:</strong> Attendance starts at 100%. You mark absents, bunks, and other missed classes. Unmarked classes count as attended.</li>
-                        </ul>
-                        <p className="text-xs text-muted-foreground leading-relaxed mt-2">
-                          Inverted mode is useful if you prefer tracking what you miss rather than what you attend. You can switch between modes at any time without losing your attendance records.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-muted rounded-lg p-4">
-                    <div className="flex items-start gap-3">
                       <CalendarDays className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <h3 className="text-sm font-mono font-semibold text-foreground mb-2">Mark Entire Day</h3>
