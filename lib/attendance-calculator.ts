@@ -95,18 +95,8 @@ export function calculateAttendanceStats(
         hasClassOccurred = classStartTime < today;
       }
       
-      // Handle inverted mode: default to attended, mark absents/bunks
-      // Normal mode: default to absent, mark attended
-      if (!status && hasClassOccurred) {
-        if (settings.invertedMode) {
-          status = "attended"; // In inverted mode, unmarked = attended
-        } else {
-          status = "absent"; // Normal mode, unmarked = absent
-        }
-      }
-      
-      // Skip if no record and class hasn't occurred yet (upcoming)
-      if (!status) return;
+      // Skip if class hasn't occurred yet (upcoming)
+      if (!hasClassOccurred) return;
 
       const subjectStats = subjectMap.get(slot.subject);
       if (!subjectStats) return;
@@ -117,68 +107,122 @@ export function calculateAttendanceStats(
       const weight = slot.type === "lab" ? 1 : (slot.rowSpan || 1);
       const isLab = slot.type === "lab";
 
-      // Handle different statuses based on settings
-      switch (status) {
-        case "attended":
-          subjectStats.attended += weight;
-          subjectStats.total += weight;
-          if (isLab) {
-            subjectStats.labAttended += weight;
-            subjectStats.labTotal += weight;
-          } else {
-            subjectStats.lectureAttended += weight;
-            subjectStats.lectureTotal += weight;
-          }
-          break;
-          
-        case "absent":
+      // INVERTED MODE LOGIC:
+      // In inverted mode, all classes are assumed attended by default
+      // We count total classes and subtract based on absent/bunk records
+      if (settings.invertedMode) {
+        // Always count this class in total (it occurred)
+        subjectStats.total += weight;
+        if (isLab) {
+          subjectStats.labTotal += weight;
+        } else {
+          subjectStats.lectureTotal += weight;
+        }
+        
+        // Default to attended (count it as attended)
+        subjectStats.attended += weight;
+        if (isLab) {
+          subjectStats.labAttended += weight;
+        } else {
+          subjectStats.lectureAttended += weight;
+        }
+        
+        // Now subtract based on actual records
+        // In inverted mode, "attended" records are redundant (default is attended)
+        // Only "absent", "bunk", and "teacher_absent" matter
+        if (status === "absent") {
+          // Subtract from attended (mark as absent)
+          subjectStats.attended -= weight;
           subjectStats.leaves += weight;
-          subjectStats.total += weight;
           if (isLab) {
+            subjectStats.labAttended -= weight;
             subjectStats.labLeaves += weight;
-            subjectStats.labTotal += weight;
           } else {
+            subjectStats.lectureAttended -= weight;
             subjectStats.lectureLeaves += weight;
-            subjectStats.lectureTotal += weight;
           }
-          break;
-          
-        case "bunk":
+        } else if (status === "bunk") {
+          // Subtract from attended based on countMassBunkAs setting
           subjectStats.bunked += weight;
           if (isLab) {
             subjectStats.labBunked += weight;
           } else {
             subjectStats.lectureBunked += weight;
           }
-          if (settings.countMassBunkAs === "attended") {
-            subjectStats.attended += weight;
-            subjectStats.total += weight;
+          
+          if (settings.countMassBunkAs === "absent") {
+            // Count bunk as absent - subtract from attended
+            subjectStats.attended -= weight;
             if (isLab) {
-              subjectStats.labAttended += weight;
-              subjectStats.labTotal += weight;
+              subjectStats.labAttended -= weight;
             } else {
-              subjectStats.lectureAttended += weight;
-              subjectStats.lectureTotal += weight;
+              subjectStats.lectureAttended -= weight;
             }
-          } else if (settings.countMassBunkAs === "absent") {
-            subjectStats.total += weight;
+          } else if (settings.countMassBunkAs === "exclude") {
+            // Exclude bunk - subtract from total and attended
+            subjectStats.total -= weight;
+            subjectStats.attended -= weight;
             if (isLab) {
-              subjectStats.labTotal += weight;
+              subjectStats.labTotal -= weight;
+              subjectStats.labAttended -= weight;
             } else {
-              subjectStats.lectureTotal += weight;
+              subjectStats.lectureTotal -= weight;
+              subjectStats.lectureAttended -= weight;
             }
           }
-          // If "exclude", don't add to total
-          break;
-          
-        case "teacher_absent":
+          // If "attended", don't subtract (already counted as attended)
+        } else if (status === "teacher_absent") {
           subjectStats.teacherAbsent += weight;
           if (isLab) {
             subjectStats.labTeacherAbsent += weight;
           } else {
             subjectStats.lectureTeacherAbsent += weight;
           }
-          if (settings.countTeacherAbsentAs === "attended") {
+          
+          if (settings.countTeacherAbsentAs === "absent") {
+            // Count teacher absent as absent - subtract from attended
+            subjectStats.attended -= weight;
+            if (isLab) {
+              subjectStats.labAttended -= weight;
+            } else {
+              subjectStats.lectureAttended -= weight;
+            }
+          } else if (settings.countTeacherAbsentAs === "exclude") {
+            // Exclude teacher absent - subtract from total and attended
+            subjectStats.total -= weight;
+            subjectStats.attended -= weight;
+            if (isLab) {
+              subjectStats.labTotal -= weight;
+              subjectStats.labAttended -= weight;
+            } else {
+              subjectStats.lectureTotal -= weight;
+              subjectStats.lectureAttended -= weight;
+            }
+          }
+          // If "attended", don't subtract (already counted as attended)
+        } else if (status === "holiday") {
+          // Holiday - subtract from total and attended (don't count)
+          subjectStats.total -= weight;
+          subjectStats.attended -= weight;
+          if (isLab) {
+            subjectStats.labTotal -= weight;
+            subjectStats.labAttended -= weight;
+          } else {
+            subjectStats.lectureTotal -= weight;
+            subjectStats.lectureAttended -= weight;
+          }
+        }
+        // If status is "attended" or null/unmarked, it's already counted as attended above
+      } else {
+        // NORMAL MODE LOGIC:
+        // Default to absent, mark attended
+        if (!status) {
+          status = "absent"; // Normal mode, unmarked = absent
+        }
+        
+        // Handle different statuses based on settings
+        switch (status) {
+          case "attended":
             subjectStats.attended += weight;
             subjectStats.total += weight;
             if (isLab) {
@@ -188,20 +232,80 @@ export function calculateAttendanceStats(
               subjectStats.lectureAttended += weight;
               subjectStats.lectureTotal += weight;
             }
-          } else if (settings.countTeacherAbsentAs === "absent") {
+            break;
+            
+          case "absent":
+            subjectStats.leaves += weight;
             subjectStats.total += weight;
             if (isLab) {
+              subjectStats.labLeaves += weight;
               subjectStats.labTotal += weight;
             } else {
+              subjectStats.lectureLeaves += weight;
               subjectStats.lectureTotal += weight;
             }
-          }
-          // If "exclude", don't add to total
-          break;
-          
-        case "holiday":
-          // Don't count holidays in any stats
-          break;
+            break;
+            
+          case "bunk":
+            subjectStats.bunked += weight;
+            if (isLab) {
+              subjectStats.labBunked += weight;
+            } else {
+              subjectStats.lectureBunked += weight;
+            }
+            if (settings.countMassBunkAs === "attended") {
+              subjectStats.attended += weight;
+              subjectStats.total += weight;
+              if (isLab) {
+                subjectStats.labAttended += weight;
+                subjectStats.labTotal += weight;
+              } else {
+                subjectStats.lectureAttended += weight;
+                subjectStats.lectureTotal += weight;
+              }
+            } else if (settings.countMassBunkAs === "absent") {
+              subjectStats.total += weight;
+              if (isLab) {
+                subjectStats.labTotal += weight;
+              } else {
+                subjectStats.lectureTotal += weight;
+              }
+            }
+            // If "exclude", don't add to total
+            break;
+            
+          case "teacher_absent":
+            subjectStats.teacherAbsent += weight;
+            if (isLab) {
+              subjectStats.labTeacherAbsent += weight;
+            } else {
+              subjectStats.lectureTeacherAbsent += weight;
+            }
+            if (settings.countTeacherAbsentAs === "attended") {
+              subjectStats.attended += weight;
+              subjectStats.total += weight;
+              if (isLab) {
+                subjectStats.labAttended += weight;
+                subjectStats.labTotal += weight;
+              } else {
+                subjectStats.lectureAttended += weight;
+                subjectStats.lectureTotal += weight;
+              }
+            } else if (settings.countTeacherAbsentAs === "absent") {
+              subjectStats.total += weight;
+              if (isLab) {
+                subjectStats.labTotal += weight;
+              } else {
+                subjectStats.lectureTotal += weight;
+              }
+            }
+            // If "exclude", don't add to total
+            break;
+            
+          case "holiday":
+            // Don't count holidays in any stats
+            break;
+        }
       }
     });
   });
