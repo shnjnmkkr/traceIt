@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, X, TrendingUp, AlertCircle, CalendarDays, Loader2, Menu, PanelLeftClose, PanelLeftOpen, Sparkles, UserPlus, RefreshCw } from "lucide-react";
 import { addWeeks, subWeeks, startOfWeek, format } from "date-fns";
@@ -26,7 +26,6 @@ import { ExploreAboutDialog } from "@/components/timetable/ExploreAboutDialog";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createClient();
   
   // UI State
@@ -119,11 +118,14 @@ export default function DashboardPage() {
         });
         
         // Check if we should show explore dialog (from create page redirect)
-        const showExplore = searchParams?.get('showExplore') === 'true';
-        if (showExplore) {
-          setShowExploreDialog(true);
-          // Clean up URL parameter
-          router.replace('/dashboard', { scroll: false });
+        if (typeof window !== 'undefined') {
+          const params = new URLSearchParams(window.location.search);
+          const showExplore = params.get('showExplore') === 'true';
+          if (showExplore) {
+            setShowExploreDialog(true);
+            // Clean up URL parameter
+            router.replace('/dashboard', { scroll: false });
+          }
         }
         
       } catch (error) {
@@ -135,7 +137,7 @@ export default function DashboardPage() {
     };
     
     checkAuthAndFetchData();
-  }, [router, supabase, searchParams]);
+  }, [router, supabase]);
   
   // Semester dates
   const semesterStart = timetable ? new Date(timetable.startDate) : new Date();
