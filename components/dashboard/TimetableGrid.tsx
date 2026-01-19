@@ -259,8 +259,8 @@ export function TimetableGrid({
         </div>
 
         {/* Timetable Grid with Integrated Scroll */}
-        <div className="overflow-x-auto overflow-y-hidden">
-          <div className="min-w-[800px] md:min-w-[1000px] p-2.5 md:p-5">
+        <div className="overflow-x-auto overflow-y-hidden relative">
+          <div className="min-w-[800px] md:min-w-[1000px] p-2.5 md:p-5 relative">
             {/* Header row - Time slots */}
             <div 
               className="grid gap-1 md:gap-1.5 mb-1.5 md:mb-2 relative" 
