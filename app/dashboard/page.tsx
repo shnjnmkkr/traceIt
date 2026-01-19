@@ -150,7 +150,8 @@ export default function DashboardPage() {
       return { overall: 0, subjects: [] };
     }
     
-    return calculateAttendanceStats(
+    // Force recalculation by including all settings properties
+    const result = calculateAttendanceStats(
       timetable.slots,
       attendanceRecords,
       semesterStart,
@@ -158,7 +159,21 @@ export default function DashboardPage() {
       settings,
       weekStart
     );
-  }, [timetable, attendanceRecords, semesterStart, semesterEnd, settings, settings.invertedMode, weekStart]);
+    
+    return result;
+  }, [
+    timetable, 
+    attendanceRecords, 
+    semesterStart, 
+    semesterEnd, 
+    settings.targetPercentage,
+    settings.countMassBunkAs,
+    settings.countTeacherAbsentAs,
+    settings.showAnalytics,
+    settings.includeLabsInOverall,
+    settings.invertedMode,
+    weekStart
+  ]);
 
   // Week navigation
   const handlePreviousWeek = () => setCurrentDate(subWeeks(currentDate, 1));
