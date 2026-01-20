@@ -265,7 +265,7 @@ export function TimetableGrid({
               className="grid gap-1 md:gap-1.5 mb-1.5 md:mb-2" 
               style={{ gridTemplateColumns: `70px repeat(${TIME_SLOTS.length}, minmax(75px, 1fr))` }}
             >
-              <div className="text-[10px] md:text-xs font-mono font-semibold text-muted-foreground p-1.5 md:p-2 sticky left-0 bg-card z-30 border-r border-border">Day</div>
+              <div className="text-[10px] md:text-xs font-mono font-semibold text-muted-foreground p-1.5 md:p-2 border-r border-border">Day</div>
               {TIME_SLOTS.map((time, idx) => {
                 const nextTime = TIME_SLOTS[idx + 1];
                 const endTime = nextTime || (parseInt(time.split(':')[0]) + 1) + ':00';
@@ -284,7 +284,7 @@ export function TimetableGrid({
                 className="grid gap-1 md:gap-1.5 mb-1.5 md:mb-2"
                 style={{ gridTemplateColumns: `70px repeat(${TIME_SLOTS.length}, minmax(75px, 1fr))` }}
               >
-                <div className="text-[10px] md:text-xs font-mono font-semibold p-1.5 md:p-2 flex items-center uppercase tracking-wider sticky left-0 bg-card z-30 border-r border-border">
+                <div className="text-[10px] md:text-xs font-mono font-semibold p-1.5 md:p-2 flex items-center uppercase tracking-wider border-r border-border">
                   {day}
                 </div>
                 
