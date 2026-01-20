@@ -34,6 +34,7 @@ interface TimetableGridProps {
   onSlotEdit?: (slot: TimetableSlot) => void;
   onSlotAdd?: (day: number, startTime: string, endTime: string, subject: string, subjectName: string, type: "lecture" | "lab") => void;
   onSlotMerge?: (slotId: string) => void;
+  onSlotUnmerge?: (slotId: string) => void;
   onSlotUpdateLocal?: (slotId: string, updates: Partial<TimetableSlot>) => void;
   editable?: boolean;
   isEditMode?: boolean;
@@ -55,6 +56,7 @@ export function TimetableGrid({
   onSlotEdit, 
   onSlotAdd,
   onSlotMerge,
+  onSlotUnmerge,
   onSlotUpdateLocal,
   editable = true,
   isEditMode = false,
@@ -323,6 +325,7 @@ export function TimetableGrid({
                       canMergeRight = !nextSlot || (!nextSlot.subject && !nextSlot.subjectName);
                     }
                   }
+                  const canUnmerge = isSlotEditing && !!slot?.rowSpan && slot.rowSpan > 1 && !!onSlotUnmerge;
 
                   if (!slot) {
                     const nextTime = TIME_SLOTS[timeIdx + 1] || "18:00";
@@ -473,6 +476,21 @@ export function TimetableGrid({
                               >
                                 <Merge className="w-3 h-3" />
                                 Merge
+                              </button>
+                            )}
+                            {canUnmerge && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (onSlotUnmerge) {
+                                    onSlotUnmerge(slot.id);
+                                  }
+                                  setEditingSlot(null);
+                                }}
+                                className="w-full px-2 py-1 text-xs rounded border border-primary text-primary hover:bg-primary/10 flex items-center justify-center gap-1"
+                              >
+                                <Merge className="w-3 h-3 rotate-180" />
+                                Unmerge
                               </button>
                             )}
                             <button
