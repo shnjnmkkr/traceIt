@@ -410,7 +410,7 @@ export function TimetableGrid({
                             placeholder="Code"
                             className="w-full bg-background rounded px-2 py-1 text-xs font-mono font-bold border border-border"
                           />
-                          <div className="flex flex-wrap gap-1 mt-1">
+                          <div className="grid grid-cols-1 gap-1 mt-1">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -421,7 +421,7 @@ export function TimetableGrid({
                                   onSlotEdit({ ...slot, type: "lecture" });
                                 }
                               }}
-                              className={`flex-1 min-w-[90px] px-2 py-1 text-xs rounded border transition-all ${
+                              className={`w-full px-2 py-1 text-xs rounded border transition-all ${
                                 (slot.type === "lecture" || !slot.type)
                                   ? 'bg-primary text-primary-foreground border-primary'
                                   : 'bg-background border-border text-muted-foreground hover:border-primary'
@@ -439,7 +439,7 @@ export function TimetableGrid({
                                   onSlotEdit({ ...slot, type: "lab" });
                                 }
                               }}
-                              className={`flex-1 min-w-[90px] px-2 py-1 text-xs rounded border transition-all ${
+                              className={`w-full px-2 py-1 text-xs rounded border transition-all ${
                                 slot.type === "lab"
                                   ? 'bg-primary text-primary-foreground border-primary'
                                   : 'bg-background border-border text-muted-foreground hover:border-primary'
@@ -448,7 +448,7 @@ export function TimetableGrid({
                               Lab
                             </button>
                           </div>
-                          <div className="flex flex-wrap gap-1 mt-1">
+                          <div className="grid grid-cols-1 gap-1 mt-1">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -457,7 +457,7 @@ export function TimetableGrid({
                                 }
                                 setEditingSlot(null);
                               }}
-                              className="px-2 py-1 text-xs rounded border border-primary bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-1 min-w-[90px]"
+                              className="w-full px-2 py-1 text-xs rounded border border-primary bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-1"
                               title="Done editing"
                             >
                               <Check className="w-3 h-3" />
@@ -469,7 +469,7 @@ export function TimetableGrid({
                                   onSlotMerge(slot.id);
                                   setEditingSlot(null);
                                 }}
-                                className="flex-1 px-2 py-1 text-xs rounded border border-primary text-primary hover:bg-primary/10 flex items-center justify-center gap-1 min-w-[90px]"
+                                className="w-full px-2 py-1 text-xs rounded border border-primary text-primary hover:bg-primary/10 flex items-center justify-center gap-1"
                               >
                                 <Merge className="w-3 h-3" />
                                 Merge
@@ -483,7 +483,7 @@ export function TimetableGrid({
                                 }
                                 setEditingSlot(null);
                               }}
-                              className="px-2 py-1 text-xs rounded border border-destructive text-destructive hover:bg-destructive/10 flex items-center justify-center gap-1"
+                              className="w-full px-2 py-1 text-xs rounded border border-destructive text-destructive hover:bg-destructive/10 flex items-center justify-center gap-1"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
