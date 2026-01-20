@@ -359,7 +359,7 @@ export function TimetableGrid({
                           handleSlotClick(slot, date, e);
                         }
                       }}
-                      className={`min-h-[75px] md:min-h-[95px] border-2 rounded-md p-1.5 md:p-2.5 cursor-pointer transition-all relative touch-manipulation ${
+                      className={`${isSlotEditing ? 'min-h-0' : 'min-h-[75px] md:min-h-[95px]'} border-2 rounded-md p-1.5 md:p-2.5 cursor-pointer transition-all relative touch-manipulation ${
                         isEditMode && isSlotSelected
                           ? 'border-warning bg-warning/10 shadow-lg'
                           : isEditMode && isSlotEditing
