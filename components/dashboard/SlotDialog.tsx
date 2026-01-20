@@ -263,7 +263,7 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                 </div>
 
                 {/* Actions */}
-                <div className="p-6 pt-0 flex gap-2">
+                <div className="p-6 pt-0 flex flex-wrap gap-2">
                   {isEditing ? (
                     <>
                       <Button
@@ -272,13 +272,13 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                           setEditedSlot(slot);
                           setIsEditing(false);
                         }}
-                        className="flex-1"
+                        className="flex-1 min-w-[120px]"
                       >
                         Cancel
                       </Button>
                       <Button
                         onClick={handleSave}
-                        className="flex-1"
+                        className="flex-1 min-w-[120px]"
                       >
                         <Save className="w-4 h-4 mr-2" />
                         Save
@@ -289,7 +289,7 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                       <Button
                         variant="outline"
                         onClick={onClose}
-                        className="text-green-600 border-green-600 hover:bg-green-600/10 flex-1"
+                        className="text-green-600 border-green-600 hover:bg-green-600/10 flex-1 min-w-[120px]"
                       >
                         <CheckCircle2 className="w-4 h-4 mr-2" />
                         Done
