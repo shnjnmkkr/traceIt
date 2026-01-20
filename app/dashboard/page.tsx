@@ -329,6 +329,27 @@ export default function DashboardPage() {
     }
   };
 
+  const handleSlotUnmerge = async (slotId: string) => {
+    if (!timetable) return;
+    
+    const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+    const currentSlot = timetable.slots.find(s => s.id === slotId);
+    if (!currentSlot || !currentSlot.rowSpan || currentSlot.rowSpan <= 1) return;
+
+    const currentTimeIdx = TIME_SLOTS.indexOf(currentSlot.startTime);
+    if (currentTimeIdx === -1) return;
+
+    const newRowSpan = currentSlot.rowSpan - 1;
+    const newEndTimeIdx = currentTimeIdx + newRowSpan;
+    const newEndTime = TIME_SLOTS[newEndTimeIdx] || currentSlot.endTime;
+
+    await handleSlotEdit({
+      ...currentSlot,
+      rowSpan: newRowSpan,
+      endTime: newEndTime,
+    });
+  };
+
   const handleSlotMerge = async (slotId: string) => {
     if (!timetable) return;
     
@@ -735,6 +756,7 @@ export default function DashboardPage() {
               onSlotEdit={handleSlotEdit}
               onSlotAdd={handleSlotAdd}
               onSlotMerge={handleSlotMerge}
+              onSlotUnmerge={handleSlotUnmerge}
               onSlotUpdateLocal={handleSlotUpdateLocal}
               editable={true}
               isEditMode={isEditMode}

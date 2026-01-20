@@ -413,7 +413,8 @@ export function TimetableGrid({
                             placeholder="Code"
                             className="w-full bg-background rounded px-2 py-1 text-xs font-mono font-bold border border-border"
                           />
-                          <div className="grid grid-cols-1 gap-1 mt-1">
+                          {/* Type toggle row (Lecture / Lab) */}
+                          <div className="grid grid-cols-2 gap-1 mt-1">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -451,21 +452,9 @@ export function TimetableGrid({
                               Lab
                             </button>
                           </div>
-                          <div className="grid grid-cols-1 gap-1 mt-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (onSlotEdit && (slot.subject || slot.subjectName)) {
-                                  onSlotEdit(slot);
-                                }
-                                setEditingSlot(null);
-                              }}
-                              className="w-full px-2 py-1 text-xs rounded border border-primary bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-1"
-                              title="Done editing"
-                            >
-                              <Check className="w-3 h-3" />
-                            </button>
-                            {canMergeRight && onSlotMerge && (
+                          {/* Merge / Unmerge row */}
+                          <div className="grid grid-cols-2 gap-1 mt-1">
+                            {canMergeRight && onSlotMerge ? (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -477,8 +466,10 @@ export function TimetableGrid({
                                 <Merge className="w-3 h-3" />
                                 Merge
                               </button>
+                            ) : (
+                              <div className="w-full" />
                             )}
-                            {canUnmerge && (
+                            {canUnmerge ? (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -492,7 +483,25 @@ export function TimetableGrid({
                                 <Merge className="w-3 h-3 rotate-180" />
                                 Unmerge
                               </button>
+                            ) : (
+                              <div className="w-full" />
                             )}
+                          </div>
+                          {/* Actions row (Done / Delete) */}
+                          <div className="grid grid-cols-2 gap-1 mt-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onSlotEdit && (slot.subject || slot.subjectName)) {
+                                  onSlotEdit(slot);
+                                }
+                                setEditingSlot(null);
+                              }}
+                              className="w-full px-2 py-1 text-xs rounded border border-primary bg-primary text-primary-foreground hover:bg-primary/90 flex items-center justify-center gap-1"
+                              title="Done editing"
+                            >
+                              <Check className="w-3 h-3" />
+                            </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -502,6 +511,7 @@ export function TimetableGrid({
                                 setEditingSlot(null);
                               }}
                               className="w-full px-2 py-1 text-xs rounded border border-destructive text-destructive hover:bg-destructive/10 flex items-center justify-center gap-1"
+                              title="Delete slot"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
