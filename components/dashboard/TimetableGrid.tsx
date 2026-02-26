@@ -286,9 +286,9 @@ export function TimetableGrid({
                 className="grid gap-1 md:gap-1.5 mb-1.5 md:mb-2"
                 style={{ gridTemplateColumns: `70px repeat(${TIME_SLOTS.length}, minmax(75px, 1fr))` }}
               >
-                <div className="text-[10px] md:text-xs font-mono font-semibold p-1.5 md:p-2 flex flex-col items-center justify-center uppercase tracking-wider border-r border-border">
-                  <span>{day}</span>
-                  <span className="text-[9px] md:text-[10px] font-normal normal-case tracking-normal text-muted-foreground mt-0.5 whitespace-nowrap">
+                <div className="font-mono p-1.5 md:p-2 flex flex-col justify-center border-r border-border">
+                  <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-center w-full">{day}</span>
+                  <span className="text-[9px] md:text-[10px] font-normal text-muted-foreground mt-0.5 text-center w-full">
                     {format(addDays(currentWeekStart, dayIdx), "dd-MM-yyyy")}
                   </span>
                 </div>
