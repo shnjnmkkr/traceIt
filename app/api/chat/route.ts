@@ -152,6 +152,9 @@ export async function POST(request: Request) {
     );
 
     // 5a. Calculate total classes per subject for entire semester (needed for accurate calculations)
+    // Slots already marked as "holiday" in the attendance map are excluded from the total
+    // so that "canMiss" and "remaining" projections reflect reality.
+    // NOTE: attendance calculation (calculateAttendanceStats) is NOT touched here.
     const calculateTotalSemesterClasses = () => {
       const allSemesterDates = eachDayOfInterval({ start: semesterStart, end: semesterEnd });
       const subjectTotals = new Map<string, {
@@ -167,15 +170,22 @@ export async function POST(request: Request) {
         }
       });
 
-      // Count classes for entire semester
+      // Count classes for entire semester, skipping slots already marked as holiday
       allSemesterDates.forEach(date => {
         const dayOfWeek = getDay(date) === 0 ? 6 : getDay(date) - 1;
         if (dayOfWeek >= 5) return; // Skip weekends
 
+        const dateStr = format(date, "yyyy-MM-dd");
         const daySlots = slots.filter(s => s.day === dayOfWeek);
+
         daySlots.forEach(slot => {
           const stats = subjectTotals.get(slot.subject);
           if (!stats) return;
+
+          // If this specific slot on this date is already marked as a holiday, exclude it
+          // from the semester total so "remaining" and "canMiss" are accurate.
+          const recordKey = `${dateStr}-${slot.id}`;
+          if (attendanceMap.get(recordKey) === "holiday") return;
 
           const slotType = slot.type || 'lecture';
           const weight = slotType === "lab" ? 1 : (slot.rowSpan || 1);
@@ -590,7 +600,7 @@ IMPORTANT:
 - Labs count towards attendance targets too! Never say "you can miss as many labs as you want"
 - ALWAYS respect the user's massBunkCounting and teacherAbsentCounting preferences when explaining how these are counted
 - For subjects with both lab and lecture, use the separate lab/lecture breakdowns
-- Always clarify: "totalSoFar" means classes occurred so far, "totalInSemester" means total in entire semester
+- Always clarify: "totalSoFar" means classes occurred so far, "totalInSemester" means total in entire semester (already excludes any slots marked as holidays, so "remaining" and "canMiss" are accurate)
 - Use overallStats for questions about overall attendance, semester progress, or projections
 - Use currentWeek for questions about this week's classes
 - Use schedule.today for questions about today's classes
