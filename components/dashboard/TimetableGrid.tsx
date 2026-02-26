@@ -288,8 +288,8 @@ export function TimetableGrid({
               >
                 <div className="text-[10px] md:text-xs font-mono font-semibold p-1.5 md:p-2 flex flex-col justify-center uppercase tracking-wider border-r border-border">
                   <span>{day}</span>
-                  <span className="text-[9px] md:text-[10px] font-normal normal-case tracking-normal text-muted-foreground mt-0.5">
-                    {format(addDays(currentWeekStart, dayIdx), "dd MM yyyy")}
+                  <span className="text-[9px] md:text-[10px] font-normal normal-case tracking-normal text-muted-foreground mt-0.5 whitespace-nowrap">
+                    {format(addDays(currentWeekStart, dayIdx), "dd-MM-yyyy")}
                   </span>
                 </div>
                 
