@@ -107,10 +107,13 @@ export function calculateAttendanceStats(
       const weight = slot.type === "lab" ? 1 : (slot.rowSpan || 1);
       const isLab = slot.type === "lab";
 
-      // NORMAL MODE LOGIC:
-      // Default to absent, mark attended
+      // Default status for an unmarked-but-occurred class depends on the mode:
+      // - Normal mode: default to absent, mark presents.
+      // - Inverted mode: default to attended (100% baseline), mark exceptions
+      //   (absent/bunk/teacher_absent/holiday). Everything below this point is
+      //   identical for both modes - only the fallback default changes.
       if (!status) {
-        status = "absent"; // Normal mode, unmarked = absent
+        status = settings.invertedMode ? "attended" : "absent";
       }
       
       // Handle different statuses based on settings

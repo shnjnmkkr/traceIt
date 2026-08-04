@@ -4,12 +4,11 @@ import Groq from 'groq-sdk';
 import { calculateAttendanceStats } from '@/lib/attendance-calculator';
 import { format, eachDayOfInterval, getDay, differenceInDays, differenceInWeeks, startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { rateLimit, RATE_LIMITS, getIdentifier } from '@/lib/rate-limiter';
+import { DAYS_FULL as DAYS } from '@/lib/timetable-constants';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
-
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export async function POST(request: Request) {
   try {
@@ -128,12 +127,14 @@ export async function POST(request: Request) {
       countTeacherAbsentAs: settingsData.count_teacher_absent_as,
       showAnalytics: settingsData.show_analytics,
       includeLabsInOverall: settingsData.include_labs_in_overall !== false, // Default to true
+      invertedMode: settingsData.inverted_mode ?? false, // Default to false if column doesn't exist
     } : {
       targetPercentage: 75,
       countMassBunkAs: 'absent',
       countTeacherAbsentAs: 'attended',
       showAnalytics: true,
       includeLabsInOverall: true,
+      invertedMode: false,
     };
 
     // 5. Calculate current attendance stats
@@ -495,6 +496,7 @@ export async function POST(request: Request) {
         massBunkCounting: settings.countMassBunkAs, // "attended", "absent", or "exclude"
         teacherAbsentCounting: settings.countTeacherAbsentAs, // "attended", "absent", or "exclude"
         includeLabsInOverall: settings.includeLabsInOverall, // Whether labs are included in overall attendance
+        invertedMode: settings.invertedMode, // If true, unmarked classes default to attended instead of absent
       },
     };
 
@@ -595,6 +597,7 @@ FOR SETTINGS (settings):
 - massBunkCounting = how mass bunks are counted ("attended", "absent", or "exclude") - RESPECT THIS USER PREFERENCE
 - teacherAbsentCounting = how teacher absences are counted ("attended", "absent", or "exclude") - RESPECT THIS USER PREFERENCE
 - includeLabsInOverall = whether labs are included in overall attendance calculation (true/false)
+- invertedMode = if true, the user is tracking backwards: every class defaults to attended (100% baseline) and they only mark the classes they missed (absent/bunk/teacher_absent/holiday). All the percentages, attended/total counts, canMiss, and minimumNeeded values in this context are ALREADY calculated correctly for whichever mode is active - you never need to invert anything yourself. Only mention the mode if the user asks how tracking works or seems confused about why unmarked classes count as attended.
 
 IMPORTANT: 
 - Labs count towards attendance targets too! Never say "you can miss as many labs as you want"

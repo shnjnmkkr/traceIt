@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChatMessage } from "@/types";
-import { trackFeature } from "@/hooks/useAnalytics";
 
 export function AIChatPanel() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -74,8 +73,8 @@ export function AIChatPanel() {
     setInput("");
     setIsTyping(true);
 
-    // Track AI chat usage
-    trackFeature('ai_chat', { messageLength: input.length });
+    // Usage is tracked server-side in /api/chat (it already knows the model
+    // used and whether a fallback was needed, so we don't double-track here).
 
     try {
       const response = await fetch('/api/chat', {

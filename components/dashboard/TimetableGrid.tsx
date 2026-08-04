@@ -6,13 +6,12 @@ import { TimetableSlot } from "@/types";
 import { getStatusColor, getStatusLabel } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Maximize2, Merge, Trash2, Edit2, Save, Check } from "lucide-react";
+import { Plus, Merge, Trash2, Edit2, Save, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SlotDialog } from "./SlotDialog";
 import { AddSlotDialog } from "./AddSlotDialog";
 import { addDays, format, isBefore, startOfDay } from "date-fns";
-
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+import { TIME_SLOTS, DAYS_SHORT as DAYS } from "@/lib/timetable-constants";
 
 const STATUS_LEGEND = [
   { key: "attended", label: "Attended" },
@@ -45,12 +44,11 @@ interface TimetableGridProps {
   onEditModeToggle?: () => void;
 }
 
-const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
-
 export function TimetableGrid({ 
   slots, 
   attendanceRecords, 
   currentWeekStart,
+  invertedMode = false,
   onSlotUpdate, 
   onSlotDelete, 
   onSlotEdit, 
@@ -69,7 +67,6 @@ export function TimetableGrid({
   const [selectedSlot, setSelectedSlot] = useState<{ slot: TimetableSlot; date: string } | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [slotPosition, setSlotPosition] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-  const [mergingSlots, setMergingSlots] = useState<string[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newSlotData, setNewSlotData] = useState<{ day: number; startTime: string; endTime: string } | null>(null);
   
@@ -165,32 +162,24 @@ export function TimetableGrid({
       return "upcoming";
     }
     
-    // For past dates, return unmarked (will be handled by calculator)
-    return "unmarked";
+    // Past, unmarked: in inverted mode the default state is "attended"
+    // (100% baseline), otherwise it falls back to "unmarked" and the
+    // calculator treats it as absent.
+    return invertedMode ? "attended" : "unmarked";
   };
 
   const handleSlotClick = (slot: TimetableSlot, date: string, event: React.MouseEvent<HTMLDivElement>) => {
-    if (mergingSlots.length > 0) {
-      // Merging mode
-      if (mergingSlots.includes(slot.id)) {
-        setMergingSlots(mergingSlots.filter(id => id !== slot.id));
-      } else {
-        setMergingSlots([...mergingSlots, slot.id]);
-      }
-    } else {
-      // Get the position of the clicked slot
-      const rect = event.currentTarget.getBoundingClientRect();
-      setSlotPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
-        width: rect.width,
-        height: rect.height,
-      });
-      
-      // Normal selection - open dialog
-      setSelectedSlot({ slot, date });
-      setIsDialogOpen(true);
-    }
+    // Get the position of the clicked slot
+    const rect = event.currentTarget.getBoundingClientRect();
+    setSlotPosition({
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      width: rect.width,
+      height: rect.height,
+    });
+    
+    setSelectedSlot({ slot, date });
+    setIsDialogOpen(true);
   };
 
   const handleStatusChange = (newStatus: string) => {
@@ -352,7 +341,6 @@ export function TimetableGrid({
                     );
                   }
 
-                  const isMerging = mergingSlots.includes(slot.id);
                   const status = getSlotStatus(slot.id, date);
 
                   return (
@@ -373,7 +361,7 @@ export function TimetableGrid({
                           : slot && (slot.subject || slot.subjectName)
                           ? 'border-primary bg-primary/5 hover:bg-primary/10 active:bg-primary/15'
                           : 'border-dashed border-border hover:border-primary/50 hover:bg-muted/50 active:bg-muted/70'
-                      } ${isMerging ? 'ring-2 ring-warning shadow-lg' : ''}`}
+                      }`}
                       style={{
                         gridColumnStart,
                         gridColumnEnd,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DAYS_FULL as DAYS } from "@/lib/timetable-constants";
 
 interface AddSlotDialogProps {
   day: number;
@@ -13,8 +14,6 @@ interface AddSlotDialogProps {
   onClose: () => void;
   onSave: (data: { subject: string; subjectName: string; type: "lecture" | "lab" }) => void;
 }
-
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
 export function AddSlotDialog({ day, startTime, endTime, isOpen, onClose, onSave }: AddSlotDialogProps) {
   const [subject, setSubject] = useState("");

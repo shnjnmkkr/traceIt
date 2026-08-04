@@ -154,6 +154,20 @@ export default function AboutPage() {
 
                   <div className="bg-muted rounded-lg p-4">
                     <div className="flex items-start gap-3">
+                      <RefreshCw className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <h3 className="text-sm font-mono font-semibold text-foreground mb-2">
+                          Inverted Mode
+                        </h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Toggle "Inverted Mode" below the "Mark Entire Day" button in the left panel to flip how attendance defaults. Normally, unmarked classes count as absent. In Inverted Mode, every class starts at 100% attended and you only mark the exceptions - absent, mass bunked, teacher absent, or holiday - which is faster since most students attend more classes than they miss. You can switch between the two modes anytime; no attendance data is lost or rewritten, only how unmarked classes are interpreted changes.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-muted rounded-lg p-4">
+                    <div className="flex items-start gap-3">
                       <Users className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <h3 className="text-sm font-mono font-semibold text-foreground mb-2">

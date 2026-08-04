@@ -23,6 +23,8 @@ import { Timetable, UserSettings } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import { usePageView, trackFeature } from "@/hooks/useAnalytics";
 import { ExploreAboutDialog } from "@/components/timetable/ExploreAboutDialog";
+import { InvertedModeDialog } from "@/components/timetable/InvertedModeDialog";
+import { TIME_SLOTS } from "@/lib/timetable-constants";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -35,6 +37,7 @@ export default function DashboardPage() {
   const [isLeftPanelOpen, setIsLeftPanelOpen] = useState(true);
   const [isBulkMarkingOpen, setIsBulkMarkingOpen] = useState(false);
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
+  const [showInvertedModeDialog, setShowInvertedModeDialog] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingSlot, setEditingSlot] = useState<string | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
@@ -59,6 +62,7 @@ export default function DashboardPage() {
     countTeacherAbsentAs: "attended",
     showAnalytics: true,
     includeLabsInOverall: true,
+    invertedMode: false,
   });
   const [attendanceRecords, setAttendanceRecords] = useState<Map<string, string>>(new Map());
   const [showExploreDialog, setShowExploreDialog] = useState(false);
@@ -166,6 +170,7 @@ export default function DashboardPage() {
     settings.countTeacherAbsentAs,
     settings.showAnalytics,
     settings.includeLabsInOverall,
+    settings.invertedMode,
     weekStart
   ]);
 
@@ -332,7 +337,6 @@ export default function DashboardPage() {
   const handleSlotUnmerge = async (slotId: string) => {
     if (!timetable) return;
     
-    const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
     const currentSlot = timetable.slots.find(s => s.id === slotId);
     if (!currentSlot || !currentSlot.rowSpan || currentSlot.rowSpan <= 1) return;
 
@@ -353,7 +357,6 @@ export default function DashboardPage() {
   const handleSlotMerge = async (slotId: string) => {
     if (!timetable) return;
     
-    const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
     const currentSlot = timetable.slots.find(s => s.id === slotId);
     if (!currentSlot) return;
 
@@ -506,6 +509,18 @@ export default function DashboardPage() {
     }
   };
   
+  // Inverted mode toggle: switching modes is always safe and reversible since
+  // it only changes how *unmarked* classes are interpreted (see
+  // calculateAttendanceStats) - no attendance records are rewritten. Turning
+  // it ON shows a quick explainer first; turning it OFF is instant.
+  const handleToggleInvertedMode = () => {
+    if (settings.invertedMode) {
+      handleSettingsChange({ ...settings, invertedMode: false });
+    } else {
+      setShowInvertedModeDialog(true);
+    }
+  };
+
   // Logout
   // Calculate "at risk" subjects
   const atRiskSubjects = analytics.subjects.filter(s => s.percentage < settings.targetPercentage);
@@ -639,6 +654,17 @@ export default function DashboardPage() {
                 <CalendarDays className="w-3.5 h-3.5" />
                 Mark Entire Day
               </Button>
+
+              {/* Inverted Mode Toggle */}
+              <Button
+                variant={settings.invertedMode ? "default" : "outline"}
+                size="sm"
+                onClick={handleToggleInvertedMode}
+                className="w-full gap-2 font-mono text-xs"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Inverted Mode: {settings.invertedMode ? "On" : "Off"}
+              </Button>
             </div>
           </motion.div>
 
@@ -751,6 +777,7 @@ export default function DashboardPage() {
               slots={timetable.slots}
               attendanceRecords={attendanceRecords}
               currentWeekStart={weekStart}
+              invertedMode={settings.invertedMode}
               onSlotUpdate={handleSlotUpdate}
               onSlotDelete={handleSlotDelete}
               onSlotEdit={handleSlotEdit}
@@ -935,6 +962,17 @@ export default function DashboardPage() {
                   Mark Entire Day
                 </Button>
 
+                {/* Inverted Mode Toggle */}
+                <Button
+                  variant={settings.invertedMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleToggleInvertedMode}
+                  className="w-full gap-2 font-mono text-xs"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Inverted Mode: {settings.invertedMode ? "On" : "Off"}
+                </Button>
+
                 <div className="border-t border-border" />
 
                 {/* Semester Info */}
@@ -1017,6 +1055,16 @@ export default function DashboardPage() {
         onClose={() => {
           setShowExploreDialog(false);
         }}
+      />
+
+      <InvertedModeDialog
+        isOpen={showInvertedModeDialog}
+        onClose={() => setShowInvertedModeDialog(false)}
+        onEnable={() => {
+          handleSettingsChange({ ...settings, invertedMode: true });
+          setShowInvertedModeDialog(false);
+        }}
+        onSkip={() => setShowInvertedModeDialog(false)}
       />
     </div>
   );

@@ -10,9 +10,7 @@ import { ImageUploadDialog } from "@/components/timetable/ImageUploadDialog";
 import { CommunityTemplates } from "@/components/timetable/CommunityTemplates";
 import { ShareTemplateDialog } from "@/components/timetable/ShareTemplateDialog";
 import { usePageView, trackFeature } from "@/hooks/useAnalytics";
-
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-const TIME_SLOTS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+import { TIME_SLOTS, DAYS_FULL as DAYS } from "@/lib/timetable-constants";
 
 interface Slot {
   id: string;
@@ -39,11 +37,11 @@ export default function CreateTimetablePage() {
   const [error, setError] = useState("");
 
   // Timetable metadata
-  const [name, setName] = useState("Even Semester 2026");
-  const [semester, setSemester] = useState("Even Semester 2026");
+  const [name, setName] = useState("Odd Semester 2026-27");
+  const [semester, setSemester] = useState("Odd Semester 2026-27");
   const [section, setSection] = useState("");
-  const [startDate, setStartDate] = useState("2026-01-05");
-  const [endDate, setEndDate] = useState("2026-04-22");
+  const [startDate, setStartDate] = useState("2026-08-03");
+  const [endDate, setEndDate] = useState("2026-11-17");
 
   // Slots
   const [slots, setSlots] = useState<Slot[]>([]);

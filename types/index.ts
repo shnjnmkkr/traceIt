@@ -73,4 +73,9 @@ export interface UserSettings {
   countTeacherAbsentAs: "attended" | "absent" | "exclude";
   showAnalytics: boolean;
   includeLabsInOverall: boolean;
+  // Inverted mode: default state is 100% (all attended); the user only
+  // marks the exceptions (absent, bunk, teacher_absent, holiday), which
+  // is why calculateAttendanceStats only needs to flip the default status
+  // for unmarked classes and nothing else.
+  invertedMode: boolean;
 }
