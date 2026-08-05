@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { TimetableSlot } from "@/types";
 import { getStatusColor, getStatusLabel } from "@/lib/utils";
@@ -69,6 +69,7 @@ export function TimetableGrid({
   const [slotPosition, setSlotPosition] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newSlotData, setNewSlotData] = useState<{ day: number; startTime: string; endTime: string } | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   // Use external state if provided, otherwise use internal state
   const editingSlot = externalEditingSlot !== undefined ? externalEditingSlot : null;
@@ -91,6 +92,21 @@ export function TimetableGrid({
       (slot) => slot.day === day && slot.startTime === time
     );
   };
+
+  // The editing cell needs much more width than a normal slot (subject
+  // inputs, lecture/lab toggle, merge/unmerge, done/delete). Each day row
+  // is its own grid instance, so if we let that one row grow its tracks to
+  // fit the content, it drifts out of alignment with every other row and
+  // the header - which is what reads as "overlapping" UI. Instead we widen
+  // that single time column explicitly and apply the identical template
+  // string to the header and every day row, so columns always line up and
+  // the wrapping scroll container just reveals the extra width.
+  const EDIT_COLUMN_WIDTH = "260px";
+  const editingSlotObj = isEditMode && editingSlot ? slots.find((s) => s.id === editingSlot) : undefined;
+  const editingTimeIdx = editingSlotObj ? TIME_SLOTS.indexOf(editingSlotObj.startTime) : -1;
+  const gridTemplateColumns = `70px ${TIME_SLOTS.map((_, idx) =>
+    idx === editingTimeIdx ? EDIT_COLUMN_WIDTH : "minmax(75px, 1fr)"
+  ).join(" ")}`;
 
   // Helper functions for edit mode
   const getSlotAtCell = (day: number, time: string) => {
@@ -167,6 +183,15 @@ export function TimetableGrid({
     // calculator treats it as absent.
     return invertedMode ? "attended" : "unmarked";
   };
+
+  // The editing column widens, which can push it out of the visible scroll
+  // area on smaller screens - bring it back into view instead of leaving
+  // the user to hunt for it.
+  useEffect(() => {
+    if (!editingSlot) return;
+    const cell = scrollContainerRef.current?.querySelector('[data-editing-cell="true"]');
+    cell?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [editingSlot]);
 
   const handleSlotClick = (slot: TimetableSlot, date: string, event: React.MouseEvent<HTMLDivElement>) => {
     // Get the position of the clicked slot
@@ -249,12 +274,12 @@ export function TimetableGrid({
         </div>
 
         {/* Timetable Grid with Integrated Scroll */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" ref={scrollContainerRef}>
           <div className="min-w-[800px] md:min-w-[1000px] p-2.5 md:p-5">
             {/* Header row - Time slots */}
             <div 
               className="grid gap-1 md:gap-1.5 mb-1.5 md:mb-2" 
-              style={{ gridTemplateColumns: `70px repeat(${TIME_SLOTS.length}, minmax(75px, 1fr))` }}
+              style={{ gridTemplateColumns }}
             >
               <div className="text-[10px] md:text-xs font-mono font-semibold text-muted-foreground p-1.5 md:p-2 border-r border-border">Day</div>
               {TIME_SLOTS.map((time, idx) => {
@@ -273,7 +298,7 @@ export function TimetableGrid({
               <div 
                 key={day} 
                 className="grid gap-1 md:gap-1.5 mb-1.5 md:mb-2"
-                style={{ gridTemplateColumns: `70px repeat(${TIME_SLOTS.length}, minmax(75px, 1fr))` }}
+                style={{ gridTemplateColumns }}
               >
                 <div className="text-[10px] md:text-xs font-mono font-semibold p-1.5 md:p-2 flex flex-col justify-center uppercase tracking-wider border-r border-border">
                   <span>{day}</span>
@@ -346,6 +371,7 @@ export function TimetableGrid({
                   return (
                     <div
                       key={`${slot.id}-${date}`}
+                      data-editing-cell={isSlotEditing ? "true" : undefined}
                       onClick={(e) => {
                         if (isEditMode) {
                           handleCellClickEditMode(dayIdx, timeIdx);
@@ -353,7 +379,7 @@ export function TimetableGrid({
                           handleSlotClick(slot, date, e);
                         }
                       }}
-                      className={`${isSlotEditing ? 'min-h-0' : 'min-h-[75px] md:min-h-[95px]'} border-2 rounded-md p-1.5 md:p-2.5 cursor-pointer transition-all relative touch-manipulation ${
+                      className={`${isSlotEditing ? 'min-h-0' : 'min-h-[75px] md:min-h-[95px]'} border-2 rounded-md p-1.5 md:p-2.5 cursor-pointer transition-all relative touch-manipulation min-w-0 ${
                         isEditMode && isSlotSelected
                           ? 'border-warning bg-warning/10 shadow-lg'
                           : isEditMode && isSlotEditing
