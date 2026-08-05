@@ -375,14 +375,17 @@ export default function DashboardPage() {
     }
 
     try {
-      // Delete next slot if it exists
+      // Delete next slot if it exists - handleSlotDelete already awaits the
+      // API call and applies its own local state update, so by the time we
+      // move on the row is genuinely gone (no artificial delay needed).
       if (nextSlot) {
         await handleSlotDelete(nextSlot.id);
-        // Wait a bit for delete to complete
-        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
-      // Update current slot with new rowSpan
+      // Update current slot with new rowSpan. handleSlotEdit applies the
+      // optimistic update and persists it, so the UI reflects the merge as
+      // soon as this resolves - no extra refetch required (that extra round
+      // trip was slow enough to make Merge visibly lag behind Unmerge).
       const newRowSpan = (currentSlot.rowSpan || 1) + 1;
       const newEndTimeIdx = currentTimeIdx + newRowSpan;
       const newEndTime = TIME_SLOTS[newEndTimeIdx] || "18:00";
@@ -392,13 +395,6 @@ export default function DashboardPage() {
         rowSpan: newRowSpan,
         endTime: newEndTime,
       });
-
-      // Refresh timetable to get updated data
-      const ttResponse = await fetch('/api/timetable');
-      const ttData = await ttResponse.json();
-      if (ttData.timetable) {
-        setTimetable(ttData.timetable);
-      }
     } catch (error) {
       console.error('Error merging slot:', error);
     }
