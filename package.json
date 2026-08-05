@@ -8,10 +8,16 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "keywords": [],
+  "keywords": [
+    "attendance-tracker",
+    "nextjs",
+    "supabase",
+    "timetable",
+    "student-tools"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "description": "Attendance tracking and timetable manager with a weighted calculation engine, AI advisor, and OCR-based timetable import.",
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
