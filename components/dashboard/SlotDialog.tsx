@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Trash2, Calendar, MapPin, User, Check, Edit2, Save, CheckCircle2 } from "lucide-react";
 import { TimetableSlot } from "@/types";
@@ -32,6 +32,18 @@ interface SlotDialogProps {
 export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatusChange, onDelete, onSlotEdit, editable = false, slotPosition }: SlotDialogProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedSlot, setEditedSlot] = useState(slot);
+
+  useEffect(() => {
+    if (slot) {
+      setEditedSlot(slot);
+    }
+  }, [slot]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsEditing(false);
+    }
+  }, [isOpen]);
   
   if (!slot) return null;
 
@@ -110,7 +122,7 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                             type="text"
                             value={editedSlot?.subjectName || ''}
                             onChange={(e) => setEditedSlot(prev => prev ? { ...prev, subjectName: e.target.value } : null)}
-                            placeholder="Subject"
+                            placeholder="Subject name"
                             className="w-full bg-background rounded px-3 py-2 text-sm border border-border"
                           />
                           <div>
@@ -118,12 +130,50 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                               type="text"
                               value={editedSlot?.subject || ''}
                               onChange={(e) => setEditedSlot(prev => prev ? { ...prev, subject: e.target.value } : null)}
-                              placeholder="Code"
+                              placeholder="Subject code"
                               className="w-full bg-background rounded px-3 py-2 text-sm font-mono font-bold border border-border"
                             />
                             <p className="text-[10px] text-muted-foreground mt-1.5 opacity-70">
-                              ⚠️ Use the same code for lab & lecture of the same subject. Be careful with case (e.g., "EE202" ≠ "ee202").
+                              Use the same code for lab and lecture of the same subject. Case matters (e.g. EE202 vs ee202).
                             </p>
+                          </div>
+                          <input
+                            type="text"
+                            value={editedSlot?.room || ''}
+                            onChange={(e) => setEditedSlot(prev => prev ? { ...prev, room: e.target.value } : null)}
+                            placeholder="Room / location"
+                            className="w-full bg-background rounded px-3 py-2 text-sm border border-border"
+                          />
+                          <input
+                            type="text"
+                            value={editedSlot?.instructor || ''}
+                            onChange={(e) => setEditedSlot(prev => prev ? { ...prev, instructor: e.target.value } : null)}
+                            placeholder="Professor / instructor"
+                            className="w-full bg-background rounded px-3 py-2 text-sm border border-border"
+                          />
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setEditedSlot(prev => prev ? { ...prev, type: "lecture" } : null)}
+                              className={`px-3 py-2 text-xs rounded border transition-all ${
+                                (editedSlot?.type === "lecture" || !editedSlot?.type)
+                                  ? 'bg-primary text-primary-foreground border-primary'
+                                  : 'bg-background border-border text-muted-foreground hover:border-primary'
+                              }`}
+                            >
+                              Lecture
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditedSlot(prev => prev ? { ...prev, type: "lab" } : null)}
+                              className={`px-3 py-2 text-xs rounded border transition-all ${
+                                editedSlot?.type === "lab"
+                                  ? 'bg-primary text-primary-foreground border-primary'
+                                  : 'bg-background border-border text-muted-foreground hover:border-primary'
+                              }`}
+                            >
+                              Lab
+                            </button>
                           </div>
                         </div>
                       ) : (
@@ -196,6 +246,11 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                           <User className="w-4 h-4 flex-shrink-0" />
                           <span className="truncate">{slot.instructor}</span>
                         </div>
+                      )}
+                      {!slot.room && !slot.instructor && editable && (
+                        <p className="text-xs text-muted-foreground/70 italic">
+                          No room or instructor set. Use the edit button to add them.
+                        </p>
                       )}
                     </div>
                   )}

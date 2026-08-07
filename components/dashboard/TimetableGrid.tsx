@@ -102,7 +102,7 @@ export function TimetableGrid({
   // that single time column explicitly and apply the identical template
   // string to the header and every day row, so columns always line up and
   // the wrapping scroll container just reveals the extra width.
-  const EDIT_COLUMN_WIDTH = "260px";
+  const EDIT_COLUMN_WIDTH = "300px";
   const editingSlotObj = isEditMode && editingSlot ? slots.find((s) => s.id === editingSlot) : undefined;
   const editingTimeIdx = editingSlotObj ? TIME_SLOTS.indexOf(editingSlotObj.startTime) : -1;
   const gridTemplateColumns = `70px ${TIME_SLOTS.map((_, idx) =>
@@ -430,6 +430,38 @@ export function TimetableGrid({
                             }}
                             placeholder="Code"
                             className="w-full bg-background rounded px-2 py-1 text-xs font-mono font-bold border border-border"
+                          />
+                          <input
+                            type="text"
+                            value={slot.room || ''}
+                            onChange={(e) => {
+                              if (onSlotUpdateLocal) {
+                                onSlotUpdateLocal(slot.id, { room: e.target.value });
+                              }
+                            }}
+                            onBlur={() => {
+                              if (onSlotEdit && (slot.subject || slot.subjectName)) {
+                                onSlotEdit(slot);
+                              }
+                            }}
+                            placeholder="Room"
+                            className="w-full bg-background rounded px-2 py-1 text-xs border border-border"
+                          />
+                          <input
+                            type="text"
+                            value={slot.instructor || ''}
+                            onChange={(e) => {
+                              if (onSlotUpdateLocal) {
+                                onSlotUpdateLocal(slot.id, { instructor: e.target.value });
+                              }
+                            }}
+                            onBlur={() => {
+                              if (onSlotEdit && (slot.subject || slot.subjectName)) {
+                                onSlotEdit(slot);
+                              }
+                            }}
+                            placeholder="Instructor"
+                            className="w-full bg-background rounded px-2 py-1 text-xs border border-border"
                           />
                           {/* Type toggle row (Lecture / Lab) */}
                           <div className="grid grid-cols-2 gap-1 mt-1">

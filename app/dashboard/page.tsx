@@ -271,8 +271,9 @@ export default function DashboardPage() {
         slotId: updatedSlot.id,
         subject: updatedSlot.subject,
         subjectName: updatedSlot.subjectName,
-        room: updatedSlot.room,
-        instructor: updatedSlot.instructor,
+        room: updatedSlot.room ?? '',
+        instructor: updatedSlot.instructor ?? '',
+        type: updatedSlot.type || 'lecture',
       };
 
       // Include rowSpan and endTime if they exist (for merging)

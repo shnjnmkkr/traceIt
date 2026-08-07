@@ -69,7 +69,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { slotId, subject, subjectName, room, instructor, rowSpan, endTime } = body;
+    const { slotId, subject, subjectName, room, instructor, rowSpan, endTime, type } = body;
 
     // Verify the slot belongs to the user's timetable
     const { data: slot, error: slotError } = await supabase
@@ -106,6 +106,9 @@ export async function PATCH(request: Request) {
     }
     if (endTime !== undefined) {
       updateData.end_time = endTime;
+    }
+    if (type !== undefined) {
+      updateData.slot_type = type;
     }
 
     // Update the slot
