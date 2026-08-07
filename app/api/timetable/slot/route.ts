@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { timetableId, day, startTime, endTime, subject, subjectName, type } = body;
+    const { timetableId, day, startTime, endTime, subject, subjectName, type, room, instructor } = body;
 
     // Verify the timetable belongs to the user
     const { data: timetable, error: ttError } = await supabase
@@ -36,6 +36,8 @@ export async function POST(request: Request) {
         end_time: endTime,
         subject_code: subject,
         subject_name: subjectName,
+        room: room || '',
+        instructor: instructor || '',
         slot_type: type || 'lecture',
         row_span: 1,
       })

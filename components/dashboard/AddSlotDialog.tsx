@@ -12,19 +12,23 @@ interface AddSlotDialogProps {
   endTime: string;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { subject: string; subjectName: string; type: "lecture" | "lab" }) => void;
+  onSave: (data: { subject: string; subjectName: string; room?: string; instructor?: string; type: "lecture" | "lab" }) => void;
 }
 
 export function AddSlotDialog({ day, startTime, endTime, isOpen, onClose, onSave }: AddSlotDialogProps) {
   const [subject, setSubject] = useState("");
   const [subjectName, setSubjectName] = useState("");
+  const [room, setRoom] = useState("");
+  const [instructor, setInstructor] = useState("");
   const [type, setType] = useState<"lecture" | "lab">("lecture");
 
   const handleSave = () => {
     if (subject && subjectName) {
-      onSave({ subject, subjectName, type });
+      onSave({ subject, subjectName, room, instructor, type });
       setSubject("");
       setSubjectName("");
+      setRoom("");
+      setInstructor("");
       setType("lecture");
       onClose();
     }
@@ -33,6 +37,8 @@ export function AddSlotDialog({ day, startTime, endTime, isOpen, onClose, onSave
   const handleClose = () => {
     setSubject("");
     setSubjectName("");
+    setRoom("");
+    setInstructor("");
     setType("lecture");
     onClose();
   };
@@ -89,7 +95,7 @@ export function AddSlotDialog({ day, startTime, endTime, isOpen, onClose, onSave
                       type="text"
                       value={subjectName}
                       onChange={(e) => setSubjectName(e.target.value)}
-                      placeholder="Subject"
+                      placeholder="Subject Name (e.g. Signal Processing)"
                       autoFocus
                       className="w-full bg-background rounded px-3 py-2 text-sm border border-border focus:border-primary focus:outline-none"
                     />
@@ -103,7 +109,7 @@ export function AddSlotDialog({ day, startTime, endTime, isOpen, onClose, onSave
                       type="text"
                       value={subject}
                       onChange={(e) => setSubject(e.target.value)}
-                      placeholder="Code"
+                      placeholder="Code (e.g. EE301)"
                       className="w-full bg-background rounded px-3 py-2 text-sm font-mono font-bold border border-border focus:border-primary focus:outline-none"
                     />
                     <p className="text-[10px] text-muted-foreground mt-1.5 opacity-70">
@@ -113,10 +119,37 @@ export function AddSlotDialog({ day, startTime, endTime, isOpen, onClose, onSave
 
                   <div>
                     <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider block mb-2">
+                      Room / Location
+                    </label>
+                    <input
+                      type="text"
+                      value={room}
+                      onChange={(e) => setRoom(e.target.value)}
+                      placeholder="Room / Location (e.g. AB3-418)"
+                      className="w-full bg-background rounded px-3 py-2 text-sm border border-border focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider block mb-2">
+                      Professor / Instructor
+                    </label>
+                    <input
+                      type="text"
+                      value={instructor}
+                      onChange={(e) => setInstructor(e.target.value)}
+                      placeholder="Professor / Instructor Name"
+                      className="w-full bg-background rounded px-3 py-2 text-sm border border-border focus:border-primary focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider block mb-2">
                       Type
                     </label>
                     <div className="flex gap-2">
                       <button
+                        type="button"
                         onClick={() => setType("lecture")}
                         className={`flex-1 px-4 py-2 text-sm rounded border-2 transition-all ${
                           type === "lecture"
@@ -127,6 +160,7 @@ export function AddSlotDialog({ day, startTime, endTime, isOpen, onClose, onSave
                         Lecture
                       </button>
                       <button
+                        type="button"
                         onClick={() => setType("lab")}
                         className={`flex-1 px-4 py-2 text-sm rounded border-2 transition-all ${
                           type === "lab"

@@ -141,7 +141,7 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                             type="text"
                             value={editedSlot?.room || ''}
                             onChange={(e) => setEditedSlot(prev => prev ? { ...prev, room: e.target.value } : null)}
-                            placeholder="Room / location"
+                            placeholder="Room / location (e.g. AB3-418)"
                             className="w-full bg-background rounded px-3 py-2 text-sm border border-border"
                           />
                           <input

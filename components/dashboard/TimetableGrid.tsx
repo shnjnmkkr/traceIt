@@ -31,7 +31,7 @@ interface TimetableGridProps {
   onSlotUpdate?: (slotId: string, date: string, status: string) => void;
   onSlotDelete?: (slotId: string) => void;
   onSlotEdit?: (slot: TimetableSlot) => void;
-  onSlotAdd?: (day: number, startTime: string, endTime: string, subject: string, subjectName: string, type: "lecture" | "lab") => void;
+  onSlotAdd?: (day: number, startTime: string, endTime: string, subject: string, subjectName: string, type: "lecture" | "lab", room?: string, instructor?: string) => void;
   onSlotMerge?: (slotId: string) => void | Promise<void>;
   onSlotUnmerge?: (slotId: string) => void | Promise<void>;
   onSlotUpdateLocal?: (slotId: string, updates: Partial<TimetableSlot>) => void;
@@ -444,7 +444,7 @@ export function TimetableGrid({
                                 onSlotEdit(slot);
                               }
                             }}
-                            placeholder="Room"
+                            placeholder="Room (e.g. AB3-418)"
                             className="w-full bg-background rounded px-2 py-1 text-xs border border-border"
                           />
                           <input
@@ -504,53 +504,53 @@ export function TimetableGrid({
                           </div>
                           {/* Merge / Unmerge row */}
                           <div className="grid grid-cols-2 gap-1 mt-1">
-                            {canMergeRight && onSlotMerge ? (
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  if (isMergeProcessing) return;
-                                  setIsMergeProcessing(true);
-                                  try {
-                                    // Wait for the merge to actually land before closing the
-                                    // per-cell edit form - otherwise it briefly reverts to the
-                                    // unmerged view while the change is still in flight.
-                                    await onSlotMerge(slot.id);
-                                  } finally {
-                                    setIsMergeProcessing(false);
-                                    setEditingSlot(null);
-                                  }
-                                }}
-                                disabled={isMergeProcessing}
-                                className="w-full px-2 py-1 text-xs rounded border border-primary text-primary hover:bg-primary/10 flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-wait"
-                              >
-                                <Merge className="w-3 h-3" />
-                                {isMergeProcessing ? "Merging..." : "Merge"}
-                              </button>
-                            ) : (
-                              <div className="w-full" />
-                            )}
-                            {canUnmerge ? (
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  if (isMergeProcessing || !onSlotUnmerge) return;
-                                  setIsMergeProcessing(true);
-                                  try {
-                                    await onSlotUnmerge(slot.id);
-                                  } finally {
-                                    setIsMergeProcessing(false);
-                                    setEditingSlot(null);
-                                  }
-                                }}
-                                disabled={isMergeProcessing}
-                                className="w-full px-2 py-1 text-xs rounded border border-primary text-primary hover:bg-primary/10 flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-wait"
-                              >
-                                <Merge className="w-3 h-3 rotate-180" />
-                                {isMergeProcessing ? "..." : "Unmerge"}
-                              </button>
-                            ) : (
-                              <div className="w-full" />
-                            )}
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!canMergeRight || !onSlotMerge || isMergeProcessing) return;
+                                setIsMergeProcessing(true);
+                                try {
+                                  await onSlotMerge(slot.id);
+                                } finally {
+                                  setIsMergeProcessing(false);
+                                }
+                              }}
+                              disabled={!canMergeRight || !onSlotMerge || isMergeProcessing}
+                              className={`w-full px-2 py-1 text-xs rounded border flex items-center justify-center gap-1 transition-all ${
+                                canMergeRight && !!onSlotMerge && !isMergeProcessing
+                                  ? 'border-primary text-primary hover:bg-primary/10 cursor-pointer'
+                                  : 'border-border/60 text-muted-foreground/40 bg-muted/20 cursor-not-allowed opacity-50'
+                              }`}
+                              title={canMergeRight ? "Merge with next slot" : "Cannot merge further"}
+                            >
+                              <Merge className="w-3 h-3" />
+                              {isMergeProcessing ? "Merging..." : "Merge"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!canUnmerge || !onSlotUnmerge || isMergeProcessing) return;
+                                setIsMergeProcessing(true);
+                                try {
+                                  await onSlotUnmerge(slot.id);
+                                } finally {
+                                  setIsMergeProcessing(false);
+                                }
+                              }}
+                              disabled={!canUnmerge || !onSlotUnmerge || isMergeProcessing}
+                              className={`w-full px-2 py-1 text-xs rounded border flex items-center justify-center gap-1 transition-all ${
+                                canUnmerge && !isMergeProcessing
+                                  ? 'border-primary text-primary hover:bg-primary/10 cursor-pointer'
+                                  : 'border-border/60 text-muted-foreground/40 bg-muted/20 cursor-not-allowed opacity-50'
+                              }`}
+                              title={canUnmerge ? "Unmerge slot" : "Cannot unmerge (single slot)"}
+                            >
+                              <Merge className="w-3 h-3 rotate-180" />
+                              {isMergeProcessing ? "..." : "Unmerge"}
+                            </button>
                           </div>
                           {/* Actions row (Done / Delete) */}
                           <div className="grid grid-cols-2 gap-1 mt-1">
@@ -568,12 +568,15 @@ export function TimetableGrid({
                               <Check className="w-3 h-3" />
                             </button>
                             <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
                               onClick={(e) => {
                                 e.stopPropagation();
+                                setEditingSlot(null);
+                                setSelectedSlotId(null);
                                 if (onSlotDelete) {
                                   onSlotDelete(slot.id);
                                 }
-                                setEditingSlot(null);
                               }}
                               className="w-full px-2 py-1 text-xs rounded border border-destructive text-destructive hover:bg-destructive/10 flex items-center justify-center gap-1"
                               title="Delete slot"
@@ -651,7 +654,7 @@ export function TimetableGrid({
           }}
           onSave={(data) => {
             if (onSlotAdd) {
-              onSlotAdd(newSlotData.day, newSlotData.startTime, newSlotData.endTime, data.subject, data.subjectName, data.type);
+              onSlotAdd(newSlotData.day, newSlotData.startTime, newSlotData.endTime, data.subject, data.subjectName, data.type, data.room, data.instructor);
             }
             setIsAddDialogOpen(false);
             setNewSlotData(null);

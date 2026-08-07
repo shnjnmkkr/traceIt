@@ -229,6 +229,15 @@ export default function DashboardPage() {
   const handleSlotDelete = async (slotId: string) => {
     if (!timetable) return;
     
+    // Optimistic update - remove slot immediately from local state
+    setTimetable(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        slots: prev.slots.filter(s => s.id !== slotId)
+      };
+    });
+
     try {
       const response = await fetch('/api/timetable/slot', {
         method: 'DELETE',
@@ -239,26 +248,24 @@ export default function DashboardPage() {
       if (!response.ok) {
         throw new Error('Failed to delete slot');
       }
-      
-      // Update local state immediately
-      setTimetable(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          slots: prev.slots.filter(s => s.id !== slotId)
-        };
-      });
     } catch (error) {
       console.error('Error deleting slot:', error);
+      // Revert optimistic update on error
+      const ttResponse = await fetch('/api/timetable');
+      const ttData = await ttResponse.json();
+      if (ttData.timetable) {
+        setTimetable(ttData.timetable);
+      }
     }
   };
 
   const handleSlotEdit = async (updatedSlot: any) => {
     if (!timetable) return;
     
-    // Optimistic update
+    // Optimistic update - don't re-add slot if it was deleted
     setTimetable(prev => {
       if (!prev) return null;
+      if (!prev.slots.some(s => s.id === updatedSlot.id)) return prev;
       return {
         ...prev,
         slots: prev.slots.map(s => s.id === updatedSlot.id ? updatedSlot : s)
@@ -294,7 +301,16 @@ export default function DashboardPage() {
     }
   };
 
-  const handleSlotAdd = async (day: number, startTime: string, endTime: string, subject: string, subjectName: string, type: "lecture" | "lab") => {
+  const handleSlotAdd = async (
+    day: number,
+    startTime: string,
+    endTime: string,
+    subject: string,
+    subjectName: string,
+    type: "lecture" | "lab",
+    room?: string,
+    instructor?: string
+  ) => {
     if (!timetable) return;
     
     try {
@@ -309,6 +325,8 @@ export default function DashboardPage() {
           subject,
           subjectName,
           type,
+          room: room || '',
+          instructor: instructor || '',
         }),
       });
 

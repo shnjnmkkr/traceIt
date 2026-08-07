@@ -448,8 +448,23 @@ export default function CreateTimetablePage() {
                                   ⚠️ Same code for lab & lecture. Case matters (EE202 ≠ ee202).
                                 </p>
                               </div>
+                              <input
+                                type="text"
+                                value={slot.room || ''}
+                                onChange={(e) => updateSlot(slot.id, { room: e.target.value })}
+                                placeholder="Room (e.g. AB3-418)"
+                                className="w-full bg-background rounded px-2 py-1 text-xs border border-border"
+                              />
+                              <input
+                                type="text"
+                                value={slot.instructor || ''}
+                                onChange={(e) => updateSlot(slot.id, { instructor: e.target.value })}
+                                placeholder="Instructor"
+                                className="w-full bg-background rounded px-2 py-1 text-xs border border-border"
+                              />
                               <div className="flex gap-1 mt-1">
                                 <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     updateSlot(slot.id, { type: "lecture" });
@@ -463,6 +478,7 @@ export default function CreateTimetablePage() {
                                   Lecture
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     updateSlot(slot.id, { type: "lab" });
@@ -480,6 +496,7 @@ export default function CreateTimetablePage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
+                                  type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     if (!slot.subject && !slot.subjectName) {
@@ -496,6 +513,8 @@ export default function CreateTimetablePage() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
+                                  type="button"
+                                  onMouseDown={(e) => e.preventDefault()}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     deleteSlot(slot.id);
