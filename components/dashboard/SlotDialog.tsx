@@ -110,7 +110,7 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                             type="text"
                             value={editedSlot?.subjectName || ''}
                             onChange={(e) => setEditedSlot(prev => prev ? { ...prev, subjectName: e.target.value } : null)}
-                            placeholder="Subject"
+                            placeholder="Subject name"
                             className="w-full bg-background rounded px-3 py-2 text-sm border border-border"
                           />
                           <div>
@@ -118,12 +118,32 @@ export function SlotDialog({ slot, date, currentStatus, isOpen, onClose, onStatu
                               type="text"
                               value={editedSlot?.subject || ''}
                               onChange={(e) => setEditedSlot(prev => prev ? { ...prev, subject: e.target.value } : null)}
-                              placeholder="Code"
+                              placeholder="Subject code (e.g. EE301)"
                               className="w-full bg-background rounded px-3 py-2 text-sm font-mono font-bold border border-border"
                             />
                             <p className="text-[10px] text-muted-foreground mt-1.5 opacity-70">
                               ⚠️ Use the same code for lab & lecture of the same subject. Be careful with case (e.g., "EE202" ≠ "ee202").
                             </p>
+                          </div>
+                          <div className="flex items-center gap-2 pt-1">
+                            <MapPin className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <input
+                              type="text"
+                              value={editedSlot?.room || ''}
+                              onChange={(e) => setEditedSlot(prev => prev ? { ...prev, room: e.target.value } : null)}
+                              placeholder="Room / location"
+                              className="w-full bg-background rounded px-3 py-2 text-sm border border-border"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <input
+                              type="text"
+                              value={editedSlot?.instructor || ''}
+                              onChange={(e) => setEditedSlot(prev => prev ? { ...prev, instructor: e.target.value } : null)}
+                              placeholder="Instructor / professor"
+                              className="w-full bg-background rounded px-3 py-2 text-sm border border-border"
+                            />
                           </div>
                         </div>
                       ) : (
