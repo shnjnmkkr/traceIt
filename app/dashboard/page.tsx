@@ -24,6 +24,8 @@ import { createClient } from "@/lib/supabase/client";
 import { usePageView, trackFeature } from "@/hooks/useAnalytics";
 import { ExploreAboutDialog } from "@/components/timetable/ExploreAboutDialog";
 import { InvertedModeDialog } from "@/components/timetable/InvertedModeDialog";
+import { ShareTemplateDialog } from "@/components/timetable/ShareTemplateDialog";
+import { CommunityTemplatesDialog } from "@/components/timetable/CommunityTemplatesDialog";
 import { TIME_SLOTS } from "@/lib/timetable-constants";
 
 export default function DashboardPage() {
@@ -38,6 +40,8 @@ export default function DashboardPage() {
   const [isBulkMarkingOpen, setIsBulkMarkingOpen] = useState(false);
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
   const [showInvertedModeDialog, setShowInvertedModeDialog] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isCommunityTemplatesOpen, setIsCommunityTemplatesOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingSlot, setEditingSlot] = useState<string | null>(null);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
@@ -178,6 +182,40 @@ export default function DashboardPage() {
   const handlePreviousWeek = () => setCurrentDate(subWeeks(currentDate, 1));
   const handleNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
   const handleToday = () => setCurrentDate(new Date());
+
+  const handleAdoptTemplate = async (template: any) => {
+    try {
+      const slots = Array.isArray(template.template_data)
+        ? template.template_data
+        : (template.template_data?.slots || []);
+
+      const response = await fetch("/api/timetable", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: template.name,
+          semester: template.semester || "1",
+          section: template.course || "A",
+          startDate: timetable?.startDate || format(new Date(), "yyyy-MM-dd"),
+          endDate: timetable?.endDate || format(addWeeks(new Date(), 16), "yyyy-MM-dd"),
+          slots,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to adopt template");
+      }
+
+      const ttResponse = await fetch("/api/timetable");
+      const ttData = await ttResponse.json();
+      if (ttData.timetable) {
+        setTimetable(ttData.timetable);
+      }
+    } catch (err) {
+      console.error("Error adopting template:", err);
+      alert("Failed to adopt template. Please try again.");
+    }
+  };
 
   // Timetable updates
   const handleSlotUpdate = async (slotId: string, date: string, newStatus: string) => {
@@ -806,6 +844,14 @@ export default function DashboardPage() {
               selectedSlot={selectedSlotId}
               onEditingSlotChange={setEditingSlot}
               onSelectedSlotChange={setSelectedSlotId}
+              onShareTimetable={() => {
+                if (isGuest) {
+                  alert("Guest users cannot share timetables to the community. Please sign up to share your timetable!");
+                  return;
+                }
+                setIsShareDialogOpen(true);
+              }}
+              onOpenCommunityTemplates={() => setIsCommunityTemplatesOpen(true)}
               onEditModeToggle={() => {
                 setIsEditMode(!isEditMode);
                 setEditingSlot(null);
@@ -1080,6 +1126,25 @@ export default function DashboardPage() {
           setShowInvertedModeDialog(false);
         }}
         onSkip={() => setShowInvertedModeDialog(false)}
+      />
+      {/* Share & Adopt Community Template Dialogs */}
+      {timetable && (
+        <ShareTemplateDialog
+          isOpen={isShareDialogOpen}
+          onClose={() => setIsShareDialogOpen(false)}
+          timetableData={{
+            name: timetable.name,
+            semester: timetable.semester,
+            section: timetable.section,
+            slots: timetable.slots,
+          }}
+        />
+      )}
+
+      <CommunityTemplatesDialog
+        isOpen={isCommunityTemplatesOpen}
+        onClose={() => setIsCommunityTemplatesOpen(false)}
+        onAdoptTemplate={handleAdoptTemplate}
       />
     </div>
   );

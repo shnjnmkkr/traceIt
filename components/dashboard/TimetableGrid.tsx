@@ -6,7 +6,7 @@ import { TimetableSlot } from "@/types";
 import { getStatusColor, getStatusLabel } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Merge, Trash2, Edit2, Save, Check } from "lucide-react";
+import { Plus, Merge, Trash2, Edit2, Save, Check, Share2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SlotDialog } from "./SlotDialog";
 import { AddSlotDialog } from "./AddSlotDialog";
@@ -41,6 +41,8 @@ interface TimetableGridProps {
   selectedSlot?: string | null;
   onEditingSlotChange?: (slotId: string | null) => void;
   onSelectedSlotChange?: (slotId: string | null) => void;
+  onShareTimetable?: () => void;
+  onOpenCommunityTemplates?: () => void;
   onEditModeToggle?: () => void;
 }
 
@@ -62,6 +64,8 @@ export function TimetableGrid({
   selectedSlot: externalSelectedSlot,
   onEditingSlotChange,
   onSelectedSlotChange,
+  onShareTimetable,
+  onOpenCommunityTemplates,
   onEditModeToggle,
 }: TimetableGridProps) {
   const [selectedSlot, setSelectedSlot] = useState<{ slot: TimetableSlot; date: string } | null>(null);
@@ -250,27 +254,55 @@ export function TimetableGrid({
               ))}
             </div>
 
-            {/* Edit Mode Toggle Button */}
-            {onEditModeToggle && (
-              <Button
-                variant={isEditMode ? "default" : "outline"}
-                size="sm"
-                onClick={onEditModeToggle}
-                className="gap-2 flex-shrink-0"
-              >
-                {isEditMode ? (
-                  <>
-                    <Save className="w-4 h-4" />
-                    Exit Edit
-                  </>
-                ) : (
-                  <>
-                    <Edit2 className="w-4 h-4" />
-                    Edit
-                  </>
-                )}
-              </Button>
-            )}
+            {/* Top Right Action Buttons (Edit, Share, Community Templates) */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {onEditModeToggle && (
+                <Button
+                  variant={isEditMode ? "default" : "outline"}
+                  size="sm"
+                  onClick={onEditModeToggle}
+                  className="gap-1.5 font-mono text-xs"
+                >
+                  {isEditMode ? (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Exit Edit
+                    </>
+                  ) : (
+                    <>
+                      <Edit2 className="w-4 h-4" />
+                      Edit
+                    </>
+                  )}
+                </Button>
+              )}
+
+              {onShareTimetable && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onShareTimetable}
+                  className="gap-1.5 font-mono text-xs"
+                  title="Share timetable with community"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-primary" />
+                  <span className="hidden sm:inline">Share</span>
+                </Button>
+              )}
+
+              {onOpenCommunityTemplates && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenCommunityTemplates}
+                  className="gap-1.5 font-mono text-xs"
+                  title="Explore and adopt community templates"
+                >
+                  <Users className="w-3.5 h-3.5 text-primary" />
+                  <span className="hidden sm:inline">Community Templates</span>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

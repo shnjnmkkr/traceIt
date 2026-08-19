@@ -128,13 +128,28 @@ export function CommunityTemplates({ onSelectTemplate }: CommunityTemplatesProps
   const handleUse = async (template: CommunityTemplate) => {
     setSelectedId(template.id);
     
-    // Increment usage count
     try {
-      await fetch('/api/community-templates', {
+      const response = await fetch('/api/community-templates', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ templateId: template.id }),
       });
+
+      const data = await response.json();
+      if (data.success) {
+        setTemplates(prev => prev.map(t => {
+          if (t.id === template.id) {
+            return {
+              ...t,
+              usage_count: data.usage_count !== undefined ? data.usage_count : (t.usage_count || 0) + 1,
+              upvotes: data.upvotes !== undefined ? data.upvotes : t.upvotes,
+              downvotes: data.downvotes !== undefined ? data.downvotes : t.downvotes,
+              userVote: data.userVote || t.userVote || 'upvote',
+            };
+          }
+          return t;
+        }));
+      }
     } catch (error) {
       console.error('Error updating usage count:', error);
     }

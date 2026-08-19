@@ -57,19 +57,19 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <Card
-        className="max-w-lg w-full"
+        className="max-w-md w-full max-h-[88vh] overflow-y-auto border-2 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6">
+        <div className="p-4 sm:p-5">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-mono font-bold">Share with Community</h2>
+              <h2 className="text-base font-mono font-bold">Share with Community</h2>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="w-5 h-5" />
@@ -77,16 +77,16 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
           </div>
 
           {/* Info */}
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-            <p className="text-sm text-foreground">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-2.5 mb-3">
+            <p className="text-xs text-foreground leading-relaxed">
               Help other students by sharing your timetable template! Your template will be available for others to use and customize.
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-sm font-mono font-semibold mb-2">
+              <label className="block text-sm font-mono font-semibold text-xs mb-1">
                 Template Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -95,12 +95,12 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., CSE 3rd Semester 2024"
                 required
-                className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
+                className="w-full bg-muted rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary border border-border"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-mono font-semibold mb-2">
+              <label className="block text-sm font-mono font-semibold text-xs mb-1">
                 Description
               </label>
               <textarea
@@ -108,13 +108,13 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Brief description of this timetable..."
                 rows={2}
-                className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border resize-none"
+                className="w-full bg-muted rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary border border-border resize-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-mono font-semibold mb-2">
+                <label className="block text-sm font-mono font-semibold text-xs mb-1">
                   University
                 </label>
                 <input
@@ -122,11 +122,11 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
                   value={formData.university}
                   onChange={(e) => setFormData({ ...formData, university: e.target.value })}
                   placeholder="DTU"
-                  className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
+                  className="w-full bg-muted rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary border border-border"
                 />
               </div>
               <div>
-                <label className="block text-sm font-mono font-semibold mb-2">
+                <label className="block text-sm font-mono font-semibold text-xs mb-1">
                   Course
                 </label>
                 <input
@@ -134,14 +134,14 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
                   value={formData.course}
                   onChange={(e) => setFormData({ ...formData, course: e.target.value })}
                   placeholder="B.Tech CSE"
-                  className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
+                  className="w-full bg-muted rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary border border-border"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-mono font-semibold mb-2">
+                <label className="block text-sm font-mono font-semibold text-xs mb-1">
                   Semester
                 </label>
                 <input
@@ -149,17 +149,17 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
                   value={formData.semester}
                   onChange={(e) => setFormData({ ...formData, semester: e.target.value })}
                   placeholder="3rd Sem"
-                  className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
+                  className="w-full bg-muted rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary border border-border"
                 />
               </div>
               <div>
-                <label className="block text-sm font-mono font-semibold mb-2">
+                <label className="block text-sm font-mono font-semibold text-xs mb-1">
                   Group
                 </label>
                 <select
                   value={formData.group}
                   onChange={(e) => setFormData({ ...formData, group: e.target.value })}
-                  className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border appearance-none cursor-pointer"
+                  className="w-full bg-muted rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary border border-border appearance-none cursor-pointer"
                 >
                   <option value="">Select Group</option>
                   <option value="P1">P1</option>
@@ -170,7 +170,7 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
             </div>
 
             <div>
-              <label className="block text-sm font-mono font-semibold mb-2">
+              <label className="block text-sm font-mono font-semibold text-xs mb-1">
                   Your Name (Optional)
                 </label>
                 <input
@@ -178,7 +178,7 @@ export function ShareTemplateDialog({ isOpen, onClose, timetableData }: ShareTem
                   value={formData.creatorName}
                   onChange={(e) => setFormData({ ...formData, creatorName: e.target.value })}
                   placeholder="Anonymous"
-                  className="w-full bg-muted rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary border border-border"
+                  className="w-full bg-muted rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary border border-border"
                 />
             </div>
 

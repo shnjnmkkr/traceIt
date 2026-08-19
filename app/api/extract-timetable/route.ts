@@ -24,7 +24,7 @@ async function extractTextFromImage(imageBase64: string): Promise<string> {
               {
                 text: `Extract timetable data from this image. Return ONLY a valid JSON array, no other text.
 
-IMPORTANT: If multiple classes occur at the same time slot, create separate entries for each class.
+IMPORTANT: If multiple classes, batches, or electives appear at the exact same time slot, pick ONLY ONE main class for that time slot. Do NOT create multiple overlapping entries for the same day and start time.
 
 JSON structure:
 [
@@ -43,7 +43,7 @@ JSON structure:
 RULES:
 - Day: Use full names - Monday, Tuesday, Wednesday, Thursday, Friday (convert abbreviations like MON/TUE/WED/THUR/FRI to full names)
 - Time: 24-hour format "HH:MM" (e.g., "08:00", "14:30")
-- If multiple classes share same time slot, create separate entries
+- STRICT RULE: Maximum ONE class per time slot on any given day. If multiple classes share the same time slot, pick the first/primary class only and ignore overlapping alternatives.
 - "type": "lab" for practical/lab sessions (P1, P2, P3), "lecture" for lectures (L)
 - Extract subject codes (e.g., "EE208", "EE206") and full names
 - Room numbers: extract room codes (e.g., "AB3408", "TWIGF2")
@@ -51,12 +51,7 @@ RULES:
 - Missing fields: use empty string ""
 - Return ONLY the JSON array, no markdown, no explanations, no text before or after
 
-Example for multiple classes in same slot:
-[
-  {"day":"Monday","startTime":"16:00","endTime":"17:00","subjectCode":"EE204","subjectName":"","room":"PSL","instructor":"DNK-1","type":"lab"},
-  {"day":"Monday","startTime":"16:00","endTime":"17:00","subjectCode":"EE208","subjectName":"","room":"SML","instructor":"KD","type":"lab"},
-  {"day":"Monday","startTime":"16:00","endTime":"17:00","subjectCode":"EE210","subjectName":"","room":"Instru Lab","instructor":"DCIK","type":"lab"}
-]`,
+`,
               },
               {
                 inline_data: {
@@ -171,7 +166,16 @@ function parseExtractedSlots(extractedJson: string): any[] {
         };
       });
 
-    return validClasses;
+    // Deduplicate: ensure at most one class per day & start time
+    const seenSlots = new Set<string>();
+    const uniqueClasses = validClasses.filter(slot => {
+      const slotKey = `${slot.day}-${slot.startTime}`;
+      if (seenSlots.has(slotKey)) return false;
+      seenSlots.add(slotKey);
+      return true;
+    });
+
+    return uniqueClasses;
   } catch (error: any) {
     console.error('Error parsing extracted JSON:', error.message);
     return [];
