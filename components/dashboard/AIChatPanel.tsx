@@ -168,8 +168,12 @@ export function AIChatPanel() {
                       <span className="text-xs font-mono opacity-70 uppercase">You</span>
                     </div>
                   )}
-                  <div className={`text-sm leading-relaxed whitespace-pre-wrap break-words ${message.role === "assistant" ? "ai-message-content" : ""}`} style={{ lineHeight: '1.6' }}>
-                    {message.content}
+                  <div className={`text-sm leading-relaxed break-words ${message.role === "assistant" ? "ai-message-content" : ""}`} style={{ lineHeight: '1.6' }}>
+                    {message.role === "assistant" ? (
+                      <FormattedMarkdown content={message.content} />
+                    ) : (
+                      <span className="whitespace-pre-wrap">{message.content}</span>
+                    )}
                     {message.id === "welcome" && (
                       <div className="text-xs text-red-500 mt-3 pt-3 border-t border-red-500/20 leading-relaxed">
                         This feature is currently in beta. If you encounter any bugs, please report them via the{" "}
@@ -240,5 +244,130 @@ export function AIChatPanel() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+
+function FormattedMarkdown({ content }: { content: string }) {
+  const blocks = content.split(/\n\n+/);
+
+  return (
+    <div className="space-y-2.5">
+      {blocks.map((block, bIdx) => {
+        const trimmed = block.trim();
+
+        // 1. Table Detection & Scrollable Rendering
+        if (trimmed.startsWith("|") && (trimmed.includes("|---") || trimmed.includes("|:---"))) {
+          const lines = trimmed.split("\n").filter((l) => l.trim().startsWith("|"));
+          const headers = lines[0]
+            ? lines[0]
+                .split("|")
+                .map((cell) => cell.trim())
+                .filter(Boolean)
+            : [];
+          const rows = lines
+            .slice(2)
+            .map((line) =>
+              line
+                .split("|")
+                .map((cell) => cell.trim())
+                .filter(Boolean)
+            );
+
+          return (
+            <div key={bIdx} className="my-2.5 overflow-x-auto rounded-md border border-border/60 bg-background/60 p-1">
+              <table className="w-full text-xs text-left border-collapse min-w-[320px]">
+                <thead>
+                  <tr className="border-b border-border/80 bg-muted/60">
+                    {headers.map((h, hIdx) => (
+                      <th key={hIdx} className="p-2 font-semibold whitespace-nowrap text-foreground">
+                        <FormattedText text={h} />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {rows.map((row, rIdx) => (
+                    <tr key={rIdx} className="hover:bg-muted/30">
+                      {row.map((cell, cIdx) => (
+                        <td key={cIdx} className="p-2 whitespace-nowrap">
+                          <FormattedText text={cell} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+        }
+
+        // 2. Horizontal Rule
+        if (trimmed === "---") {
+          return <hr key={bIdx} className="my-3 border-border/50" />;
+        }
+
+        // 3. Headings
+        if (trimmed.startsWith("#")) {
+          const level = trimmed.match(/^#+/)?.[0].length || 1;
+          const text = trimmed.replace(/^#+s*/, "");
+          return (
+            <h4
+              key={bIdx}
+              className={`font-semibold tracking-tight text-foreground ${
+                level === 1 ? "text-base mt-3 mb-1.5" : "text-sm mt-2 mb-1"
+              }`}
+            >
+              <FormattedText text={text} />
+            </h4>
+          );
+        }
+
+        // 4. Regular Lines & Bullet Lists
+        const lines = block.split("\n");
+        return (
+          <div key={bIdx} className="space-y-1">
+            {lines.map((line, lIdx) => {
+              const lTrim = line.trim();
+              if (lTrim.startsWith("- ") || lTrim.startsWith("• ")) {
+                const bulletText = lTrim.replace(/^[-•]s*/, "");
+                return (
+                  <div key={lIdx} className="flex gap-2 items-start pl-1">
+                    <span className="text-primary font-bold text-xs select-none mt-0.5">•</span>
+                    <span className="flex-1">
+                      <FormattedText text={bulletText} />
+                    </span>
+                  </div>
+                );
+              }
+
+              return (
+                <p key={lIdx} className="break-words">
+                  <FormattedText text={line} />
+                </p>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function FormattedText({ text }: { text: string }) {
+  const parts = text.split(/(\?\*\?.*?\?\*\?)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+          return (
+            <strong key={i} className="font-semibold text-foreground">
+              {part.slice(2, -2)}
+            </strong>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
   );
 }
