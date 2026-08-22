@@ -189,11 +189,11 @@ export async function POST(request: Request) {
           if (attendanceMap.get(recordKey) === "holiday") return;
 
           const slotType = slot.type || 'lecture';
-          const weight = slotType === "lab" ? 1 : (slot.rowSpan || 1);
+          const weight = slotType === "lab" ? (slot.rowSpan || 2) : (slot.rowSpan || 1);
           stats.total += weight;
           
           if (slotType === "lab") {
-            stats.labTotal += 1;
+            stats.labTotal += weight;
           } else {
             stats.lectureTotal += weight;
           }
@@ -250,7 +250,7 @@ export async function POST(request: Request) {
         const daySlots = slots.filter(s => s.day === dayOfWeek);
         daySlots.forEach(slot => {
           const slotType = slot.type || 'lecture';
-          const weight = slotType === "lab" ? 1 : (slot.rowSpan || 1);
+          const weight = slotType === "lab" ? (slot.rowSpan || 2) : (slot.rowSpan || 1);
           weekClasses += weight;
           
           // Check if class has occurred and was attended
@@ -403,12 +403,12 @@ export async function POST(request: Request) {
       code: slot.subject,
       type: slot.type || 'lecture', // "lab" or "lecture"
       classType: slot.type === 'lab' ? 'Lab Session' : 'Lecture',
-      duration: slot.rowSpan ? `${slot.rowSpan} hour${slot.rowSpan > 1 ? 's' : ''}` : '1 hour',
+      duration: slot.type === 'lab' ? `${slot.rowSpan || 2} hours` : `${slot.rowSpan || 1} hour${(slot.rowSpan || 1) > 1 ? 's' : ''}`,
       room: slot.room || 'Not specified',
       instructor: slot.instructor || 'Not specified',
       note: slot.type === 'lab' 
-        ? 'Lab: counts as 1 session regardless of duration' 
-        : `Lecture: counts as ${slot.rowSpan || 1} class${(slot.rowSpan || 1) > 1 ? 'es' : ''} (per hour)`,
+        ? 'Lab session: worth 2 class hours by default' 
+        : `Lecture: worth ${slot.rowSpan || 1} class hour(s)`,
     }));
 
     // 7. Create context for LLM with semester totals for accurate calculations
@@ -437,13 +437,14 @@ export async function POST(request: Request) {
             name: s.name,
             code: s.code,
             percentage: `${s.percentage}%`,
-            attended: s.attended,
-            totalSoFar: s.total, // Classes occurred so far (up to today)
-            totalInSemester: totalInSemester, // Total classes in entire semester
-            remaining: remaining, // Classes remaining in semester
-            targetClasses: targetClasses, // Number of classes needed to meet target percentage
-            minimumNeeded: minimumNeeded, // Must attend this many more classes
-            canMiss: canMiss, // Can miss this many classes this semester
+            unit: "class hours",
+            attendedHours: s.attended,
+            totalHoursSoFar: s.total, // Class hours occurred so far (up to today)
+            totalHoursInSemester: totalInSemester, // Total class hours in entire semester
+            remainingHours: remaining, // Class hours remaining in semester
+            targetHoursNeeded: targetClasses, // Class hours needed to meet target percentage
+            minimumHoursNeeded: minimumNeeded, // Must attend this many more class hours
+            canMissHours: canMiss, // Can miss this many class hours this semester
             bunked: s.bunked,
             leaves: s.leaves,
             teacherAbsent: s.teacherAbsent,
@@ -500,11 +501,48 @@ export async function POST(request: Request) {
       },
     };
 
-    // 8. Call Groq API with fallback models (70b first, then 8b fallback)
-    const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'];
+    // 8. Call Groq API with fallback models (70b first, then 8b, 3b, 1b fallbacks)
+    const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama-3.2-3b-preview', 'llama-3.2-1b-preview'];
     let completion;
     let lastError;
     let usedFallback = false;
+
+    const systemPrompt = `You are traceIt's AI Attendance & Timetable Advisor — a helpful, intelligent, and direct companion for university students.
+
+### GROUND TRUTH & METRICS DEFINITION
+1. **Units of Measurement**:
+   - ALL attendance numbers, limits, and targets are expressed strictly in **HOURS OF CLASSES** (e.g. "you can miss 4 hours of classes", "you must attend 10 more hours").
+   - **Lecture sessions** are counted per hour of duration (e.g. 1 hour or 2 hours depending on lecture length).
+   - **Lab sessions** are worth **2 hours** by default.
+
+2. **Inverted Tracking Mode**:
+   - **Mode Status**: ${settings.invertedMode ? 'ACTIVE (Inverted Mode: Unmarked classes default to attended; students only mark missed classes)' : 'Standard Mode (Default to absent until marked)'}.
+   - **Crucial**: All pre-calculated metrics in \`context\` (hoursAttended, hoursCanMiss, minimumHoursToAttend) ALREADY factor this in correctly. Never invert or recalculate the numbers.
+
+### CURRENT CONTEXT
+- **Today's Date**: ${format(today, 'EEEE, MMMM dd, yyyy')}
+- **Semester Duration**: ${format(semesterStart, 'MMM dd, yyyy')} – ${format(semesterEnd, 'MMM dd, yyyy')}
+- **Target Attendance Goal**: ${settings.targetPercentage}%
+
+### PRE-CALCULATED DATA (EXPRESSED IN HOURS)
+Use these exact numbers directly from \`context\`:
+${JSON.stringify(context, null, 2)}
+
+### RESPONSE GUIDELINES
+1. **Always Answer in Hours**:
+   - Frame EVERY attendance answer, target requirement, and "can miss" allowance in terms of **hours of classes** (e.g. "You have attended 12 hours out of 16 hours held so far (75%). You can miss 4 more hours of Physics this semester.").
+   - Always distinguish between hours held so far (\`hoursSoFar\`) versus total hours in the entire semester (\`totalHoursInSemester\`).
+
+2. **Lab vs Lecture Clarity**:
+   - For subjects with labs, clarify that lab sessions are 2 hours by default. Mention separate lab and lecture hour breakdowns when relevant.
+
+3. **Tone & Formatting**:
+   - Sound like a helpful, encouraging academic advisor.
+   - Use clean Markdown: bold key stats (**75%**, **12 hours**), use bullet points for lists, and keep responses concise and structured.
+   - Do NOT output raw JSON or internal code variable names.
+
+4. **Scope Limitation**:
+   - If asked about non-timetable/non-attendance topics, respond politely: "I can only help with your timetable and attendance in traceIt."`;
 
     for (const model of models) {
       try {
@@ -513,145 +551,17 @@ export async function POST(request: Request) {
           messages: [
             {
               role: 'system',
-              content: `You are a friendly AI assistant for traceIt, helping students manage their timetable and attendance. Answer ONLY questions about schedules and attendance.
-
-Current date: ${format(today, 'EEEE, MMMM dd, yyyy')}
-Semester: ${format(semesterStart, 'MMM dd')} - ${format(semesterEnd, 'MMM dd, yyyy')}
-
-Student data:
-${JSON.stringify(context, null, 2)}
-
-CRITICAL RULES:
-1. ALWAYS provide CONTEXT and REFERENCE POINTS - never give numbers without explaining what they mean.
-2. When saying "you can miss X classes", ALWAYS specify the time period (this semester, this week, remaining in semester).
-3. Include current status when giving "can miss" answers.
-4. Be CONVERSATIONAL but INFORMATIVE - give complete, actionable information.
-5. Use ONLY the data provided. Don't ask for more details.
-6. If asked something unrelated, say: "I only help with timetable and attendance in traceIt."
-
-USING THE DATA:
-All calculations are already done for you! Use these pre-calculated values from the context:
-
-FOR EACH SUBJECT:
-- totalSoFar = classes that have occurred so far (up to today)
-- totalInSemester = total classes in entire semester
-- remaining = classes remaining in semester
-- attended = classes you've attended so far
-- targetClasses = number of classes needed to meet target percentage
-- minimumNeeded = must attend this many more classes to reach target
-- canMiss = can miss this many classes this semester
-- Same fields available for lab and lecture breakdowns
-
-FOR OVERALL STATISTICS (overallStats):
-- overall.attended = total classes attended across all subjects
-- overall.totalSoFar = total classes occurred so far
-- overall.totalInSemester = total classes in entire semester
-- overall.remaining = total classes remaining
-- overall.targetClasses = total classes needed to meet target
-- overall.minimumNeeded = must attend this many more classes overall
-- overall.canMiss = can miss this many classes overall this semester
-- overall.currentPercentage = current overall attendance percentage
-- overall.percentageFromTarget = how many percentage points above/below target
-
-FOR TIME INFORMATION (overallStats.time):
-- daysRemaining = days left in semester
-- weeksRemaining = weeks left in semester
-- daysElapsed = days since semester started
-- progressPercentage = semester progress (0-100%)
-
-FOR CURRENT WEEK (overallStats.currentWeek):
-- classes = number of classes scheduled this week
-- attended = classes attended this week (so far)
-- remaining = classes remaining this week (not yet occurred or not attended)
-- startDate = week start date
-- endDate = week end date
-
-FOR DAILY SCHEDULE (overallStats.schedule):
-- today = today's schedule with classes, times, rooms, instructors, and attendance status
-  - date = date string (yyyy-MM-dd)
-  - dayName = day of week (e.g., "Wednesday")
-  - dateFormatted = formatted date (e.g., "Jan 14, 2026")
-  - isToday = true if this is today
-  - isPast = true if date has passed
-  - classes = array of classes for this day, each with:
-    - subject = subject name
-    - code = subject code
-    - time = time range (e.g., "09:00 - 10:00")
-    - type = "lab" or "lecture"
-    - room = room number
-    - instructor = instructor name
-    - duration = number of class hours (1 for lab, rowSpan for lecture)
-    - status = attendance status: "attended", "absent", "bunk", "teacher_absent", "holiday", or null if upcoming
-  - totalClasses = total class hours for the day
-- tomorrow = tomorrow's schedule (same structure as today)
-- upcoming = array of next 7 days' schedules (including today)
-
-FOR PROJECTIONS (overallStats.projections):
-- avgClassesPerWeek = average classes per week in semester
-- currentPace = current attendance rate (0-100%)
-- projectedAttended = projected total classes attended if maintaining current pace
-- projectedPercentage = projected attendance percentage if maintaining current pace
-
-FOR SETTINGS (settings):
-- targetPercentage = target attendance percentage (e.g., 75)
-- massBunkCounting = how mass bunks are counted ("attended", "absent", or "exclude") - RESPECT THIS USER PREFERENCE
-- teacherAbsentCounting = how teacher absences are counted ("attended", "absent", or "exclude") - RESPECT THIS USER PREFERENCE
-- includeLabsInOverall = whether labs are included in overall attendance calculation (true/false)
-- invertedMode = if true, the user is tracking backwards: every class defaults to attended (100% baseline) and they only mark the classes they missed (absent/bunk/teacher_absent/holiday). All the percentages, attended/total counts, canMiss, and minimumNeeded values in this context are ALREADY calculated correctly for whichever mode is active - you never need to invert anything yourself. Only mention the mode if the user asks how tracking works or seems confused about why unmarked classes count as attended.
-
-IMPORTANT: 
-- Labs count towards attendance targets too! Never say "you can miss as many labs as you want"
-- ALWAYS respect the user's massBunkCounting and teacherAbsentCounting preferences when explaining how these are counted
-- For subjects with both lab and lecture, use the separate lab/lecture breakdowns
-- Always clarify: "totalSoFar" means classes occurred so far, "totalInSemester" means total in entire semester (already excludes any slots marked as holidays, so "remaining" and "canMiss" are accurate)
-- Use overallStats for questions about overall attendance, semester progress, or projections
-- Use currentWeek for questions about this week's classes
-- Use schedule.today for questions about today's classes
-- Use schedule.tomorrow for questions about tomorrow's classes
-- Use schedule.upcoming for questions about upcoming classes or weekly schedule
-
-GOOD RESPONSE EXAMPLES:
-• "For ASM: You've attended 4 out of 7 classes so far (57%), with 56 classes remaining this semester. To meet your 75% target, you need to attend at least 47 classes total. You can miss 13 more classes this semester."
-• "For CS lectures: You've attended 2 lectures so far, with 42 remaining. You need 45 total to meet the target, so you can miss 1 more lecture this semester."
-• "Overall: You've attended 17 out of 35 classes so far (49%), with 28 classes remaining. You need 26 more classes to meet your 75% target, so you can miss 2 more classes this semester."
-• "This week: You have 8 classes scheduled from Mon to Fri. You can miss 1 class this week if needed."
-• "Progress: You're 30% through the semester with 10 weeks remaining. At your current pace of 49%, you're projected to finish at 49% - you need to improve to reach your 75% target."
-• "You're currently 26 percentage points below your 75% target. You need to attend 26 more classes to catch up."
-• "Today (Wednesday, Jan 14): You have 3 classes - ASM at 09:00, CS at 11:00, and PPE at 14:00. You've attended ASM and CS, but missed PPE."
-• "Tomorrow: You have 2 classes - PTD at 10:00 and LIC at 13:00, both in Room 201."
-• "Upcoming this week: Monday has 4 classes, Tuesday has 3, Wednesday (today) has 3, Thursday has 2, and Friday has 1 class."
-
-BAD RESPONSE EXAMPLES (DON'T DO THIS):
-• "You can miss as many lab sessions as you want" (WRONG - labs count towards attendance)
-• "For ASM, you can miss 3 more lectures and 0 more labs." (No context, confusing numbers)
-• "You can miss 3 more lectures." (No subject, no time period, no reference point)
-• Mixing up totalSoFar (7) with totalInSemester (63) - these are different!
-
-RESPONSE FORMAT:
-- No markdown formatting
-- Use • for bullets when listing multiple items
-- ALWAYS include: subject name, current status (attended/total), time period (this semester/this week), and what the number means
-- Keep responses concise but complete with all necessary context
-- Sound like you're talking to a helpful friend who gives complete information
-
-LABS vs LECTURES:
-- Same subject can have both lab and lecture
-- Lab = 1 session regardless of duration
-- Lecture = counts per hour
-- Mention both separately when relevant
-
-Days: Mon-Fri only. Times: 24-hour format.`,
+              content: systemPrompt,
             },
             {
               role: 'user',
               content: message,
             },
           ],
-          temperature: 0.7,
-          max_tokens: 400,
+          temperature: 0.2,
+          max_tokens: 500,
         });
-        
-        // Success - log if we used fallback
+                // Success - log if we used fallback
         if (usedFallback) {
           console.log(`Used fallback model: ${model} (original: ${models[0]})`);
         }

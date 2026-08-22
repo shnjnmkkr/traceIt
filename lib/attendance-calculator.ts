@@ -104,7 +104,7 @@ export function calculateAttendanceStats(
       // Weight calculation:
       // - Labs always count as 1 session (regardless of hours)
       // - Lectures count per hour (rowSpan)
-      const weight = slot.type === "lab" ? 1 : (slot.rowSpan || 1);
+      const weight = slot.type === "lab" ? (slot.rowSpan || 2) : (slot.rowSpan || 1);
       const isLab = slot.type === "lab";
 
       // Default status for an unmarked-but-occurred class depends on the mode:
