@@ -247,8 +247,9 @@ export function AIChatPanel() {
   );
 }
 
-
 function FormattedMarkdown({ content }: { content: string }) {
+  if (!content) return null;
+
   const blocks = content.split(/\n\n+/);
 
   return (
@@ -310,7 +311,7 @@ function FormattedMarkdown({ content }: { content: string }) {
         // 3. Headings
         if (trimmed.startsWith("#")) {
           const level = trimmed.match(/^#+/)?.[0].length || 1;
-          const text = trimmed.replace(/^#+s*/, "");
+          const text = trimmed.replace(/^#+\s*/, "");
           return (
             <h4
               key={bIdx}
@@ -330,7 +331,7 @@ function FormattedMarkdown({ content }: { content: string }) {
             {lines.map((line, lIdx) => {
               const lTrim = line.trim();
               if (lTrim.startsWith("- ") || lTrim.startsWith("• ")) {
-                const bulletText = lTrim.replace(/^[-•]s*/, "");
+                const bulletText = lTrim.replace(/^[-•]\s*/, "");
                 return (
                   <div key={lIdx} className="flex gap-2 items-start pl-1">
                     <span className="text-primary font-bold text-xs select-none mt-0.5">•</span>
@@ -355,13 +356,17 @@ function FormattedMarkdown({ content }: { content: string }) {
 }
 
 function FormattedText({ text }: { text: string }) {
-  const parts = text.split(/(\?\*\?.*?\?\*\?)/g);
+  if (!text) return null;
+
+  // Match **bold** syntax using clean string splitting
+  const parts = text.split(/(\*{2}.*?\*{2})/g);
+
   return (
     <>
       {parts.map((part, i) => {
-        if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+        if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
           return (
-            <strong key={i} className="font-semibold text-foreground">
+            <strong key={i} className="font-bold text-foreground">
               {part.slice(2, -2)}
             </strong>
           );
