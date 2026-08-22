@@ -501,8 +501,8 @@ export async function POST(request: Request) {
       },
     };
 
-    // 8. Call Groq API with fallback models (70b first, then 8b, 3b, 1b fallbacks)
-    const models = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama-3.2-3b-preview', 'llama-3.2-1b-preview'];
+    // 8. Call Groq API with fallback models (groq/compound 70B main, then groq/compound-mini 8B fallback)
+    const models = ['groq/compound', 'groq/compound-mini'];
     let completion;
     let lastError;
     let usedFallback = false;

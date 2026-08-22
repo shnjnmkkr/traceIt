@@ -61,7 +61,7 @@ Timetables can be built by hand, cloned from a shared community template, or ext
 - Shareable visual summary cards
 
 **AI Advisor**
-- Groq-powered chat with automatic model fallback (`llama-3.3-70b-versatile`, then `llama-3.1-8b-instant`, then `llama-3.2-3b-preview`)
+- Groq-powered chat with automatic model fallback (`groq/compound` 70B, then `groq/compound-mini` 8B fallback)
 - Reads live timetable, attendance history, and settings, so questions like "how many classes can I miss and stay above 75%" get a real answer computed from actual data
 
 **Accounts & Access**
@@ -76,7 +76,7 @@ Timetables can be built by hand, cloned from a shared community template, or ext
 | UI | React 19, Tailwind CSS, Framer Motion, Recharts, lucide-react |
 | Language | TypeScript |
 | Backend / DB | Supabase (Postgres, Auth, Row Level Security, Storage) |
-| AI, chat | Groq (Llama 3.3 / 3.1 / 3.2 fallback chain) |
+| AI, chat | Groq (Compound 70B / Compound Mini 8B fallback chain) |
 | AI, OCR | Google Gemini (`gemini-2.5-flash`) for timetable image extraction |
 | Transactional email | Resend (bug report notifications) |
 | Analytics | Custom Postgres-backed page view / feature usage tracking, plus Vercel Analytics |
