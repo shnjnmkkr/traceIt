@@ -350,7 +350,6 @@ export async function POST(request: Request) {
       
       const todaySchedule = getDailySchedule(today, 1);
       const tomorrowSchedule = getDailySchedule(addDays(today, 1), 1);
-      const upcomingSchedule = getDailySchedule(today, 7); // Next 7 days
       
       return {
         overall: {
@@ -388,7 +387,6 @@ export async function POST(request: Request) {
         schedule: {
           today: todaySchedule.length > 0 ? todaySchedule[0] : null,
           tomorrow: tomorrowSchedule.length > 0 ? tomorrowSchedule[0] : null,
-          upcoming: upcomingSchedule, // Next 7 days including today
         },
       };
     };
@@ -398,17 +396,13 @@ export async function POST(request: Request) {
     // 6. Format schedule for LLM (clearly distinguish labs and lectures)
     const schedule = slots.map(slot => ({
       day: DAYS[slot.day],
-      time: `${slot.startTime} - ${slot.endTime}`,
+      time: `${slot.startTime}-${slot.endTime}`,
       subject: slot.subjectName,
       code: slot.subject,
-      type: slot.type || 'lecture', // "lab" or "lecture"
-      classType: slot.type === 'lab' ? 'Lab Session' : 'Lecture',
-      duration: slot.type === 'lab' ? `${slot.rowSpan || 2} hours` : `${slot.rowSpan || 1} hour${(slot.rowSpan || 1) > 1 ? 's' : ''}`,
-      room: slot.room || 'Not specified',
-      instructor: slot.instructor || 'Not specified',
-      note: slot.type === 'lab' 
-        ? 'Lab session: worth 2 class hours by default' 
-        : `Lecture: worth ${slot.rowSpan || 1} class hour(s)`,
+      type: slot.type || 'lecture',
+      durationHours: slot.type === 'lab' ? (slot.rowSpan || 2) : (slot.rowSpan || 1),
+      room: slot.room || undefined,
+      instructor: slot.instructor || undefined,
     }));
 
     // 7. Create context for LLM with semester totals for accurate calculations
@@ -526,7 +520,7 @@ export async function POST(request: Request) {
 
 ### PRE-CALCULATED DATA (EXPRESSED IN HOURS)
 Use these exact numbers directly from \`context\`:
-${JSON.stringify(context, null, 2)}
+${JSON.stringify(context)}
 
 ### RESPONSE GUIDELINES
 1. **Always Answer in Hours**:
